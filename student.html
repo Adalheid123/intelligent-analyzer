@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生端 · 英语写作助手</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:system-ui,sans-serif;background:#0f172a;min-height:100vh;padding:20px;display:flex;justify-content:center;align-items:flex-start;}
+        .container{max-width:1100px;width:100%;background:#1e293b;border-radius:24px;padding:30px;border:1px solid #334155;}
+        .top-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #334155;}
+        .top-bar .nav{display:flex;gap:8px;flex-wrap:wrap;}
+        .top-bar .nav .btn{font-size:13px;padding:6px 16px;}
+        .top-bar .nav .btn:disabled{opacity:0.5;cursor:not-allowed;}
+        .top-bar .user-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:#94a3b8;}
+        .btn{padding:10px 24px;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+        .btn:active{transform:scale(0.97);}
+        .btn-primary{background:#3b82f6;color:white;}
+        .btn-primary:hover{background:#2563eb;}
+        .btn-success{background:#22c55e;color:white;}
+        .btn-success:hover{background:#16a34a;}
+        .btn-outline{background:transparent;border:1px solid #475569;color:#94a3b8;}
+        .btn-outline:hover{background:#334155;color:#f1f5f9;}
+        .btn-sm{padding:6px 14px;font-size:12px;}
+        .btn-danger{background:#ef4444;color:white;}
+        .btn-danger:hover{background:#dc2626;}
+        .btn-warning{background:#f59e0b;color:#0f172a;}
+        .btn-warning:hover{background:#d97706;}
+        .btn:disabled{opacity:0.5;cursor:not-allowed;}
+        .hidden{display:none !important;}
+        .status{color:#94a3b8;font-size:13px;margin-top:8px;}
+        .status .loading{color:#fbbf24;}
+        .status .error{color:#ef4444;}
+        .status .success{color:#34d399;}
+        .sub{color:#94a3b8;font-size:14px;margin-bottom:20px;}
+        .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+        .row textarea,.row input{flex:1;padding:10px 14px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:14px;font-family:inherit;min-width:120px;}
+        .row textarea:focus,.row input:focus{outline:none;border-color:#3b82f6;}
+        .row textarea{resize:vertical;min-height:80px;}
+        .task-list{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+        .task-item{background:#0f172a;border-radius:10px;padding:12px 16px;border:1px solid #334155;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;cursor:pointer;transition:all 0.2s;}
+        .task-item:hover{border-color:#3b82f6;}
+        .task-item.active{border-color:#3b82f6;background:#1a2744;}
+        .task-item .info{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+        .task-item .title{color:#f1f5f9;font-weight:500;}
+        .task-item .status{font-size:12px;padding:2px 12px;border-radius:20px;font-weight:500;}
+        .status-done{background:#22c55e;color:#0f172a;}
+        .status-progress{background:#f59e0b;color:#0f172a;}
+        .status-pending{background:#64748b;color:white;}
+        .card{background:#0f172a;border-radius:12px;padding:18px 20px;border:1px solid #334155;margin-bottom:14px;}
+        .card-title{color:#94a3b8;font-weight:600;font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+        .card-content{color:#e2e8f0;font-size:14px;line-height:1.8;white-space:pre-wrap;}
+        .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+        .compare-box{background:#0f172a;border-radius:10px;padding:14px;border:1px solid #334155;min-height:80px;}
+        .compare-box .label{color:#94a3b8;font-size:12px;font-weight:500;margin-bottom:4px;}
+        .compare-box .content{color:#e2e8f0;font-size:14px;line-height:1.8;white-space:pre-wrap;}
+        .feedback-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        .fb-item{background:#0f172a;border-radius:8px;padding:12px 14px;border:1px solid #1a2332;}
+        .fb-item .label{color:#94a3b8;font-size:12px;}
+        .fb-item .score{color:#f1f5f9;font-size:20px;font-weight:700;}
+        .fb-item .comment{color:#94a3b8;font-size:13px;margin-top:4px;}
+        .role-badge{display:inline-block;padding:3px 14px;border-radius:20px;font-size:12px;font-weight:600;}
+        .school-class-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:#94a3b8;padding:8px 14px;background:#0f172a;border-radius:8px;border:1px solid #334155;margin-bottom:16px;}
+        .student-selector{cursor:pointer;padding:4px 12px;background:#1e293b;border-radius:12px;border:1px solid #475569;color:#f1f5f9;font-size:13px;display:flex;align-items:center;gap:6px;}
+        .student-selector:hover{border-color:#3b82f6;}
+        @media(max-width:768px){.compare-grid{grid-template-columns:1fr;}.feedback-grid{grid-template-columns:1fr;}}
+        .change-pwd-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:9999;}
+        .change-pwd-box{background:#1e293b;padding:40px;border-radius:20px;border:1px solid #334155;max-width:400px;width:90%;text-align:center;position:relative;}
+        .change-pwd-box h2{color:#f1f5f9;margin-bottom:8px;}
+        .change-pwd-box .sub{color:#94a3b8;font-size:14px;margin-bottom:20px;}
+        .change-pwd-box input{width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:16px;margin-bottom:12px;}
+        .change-pwd-box input:focus{outline:none;border-color:#3b82f6;}
+        .change-pwd-box .error{color:#ef4444;font-size:13px;margin-bottom:10px;}
+        .change-pwd-box .btn{width:100%;}
+        .change-pwd-box .close-btn{position:absolute;top:12px;right:16px;color:#94a3b8;cursor:pointer;font-size:20px;background:none;border:none;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 顶部导航栏 -->
+    <div class="top-bar">
+        <div>
+            <h1 style="font-size:18px;color:#f1f5f9;margin:0;">🧠 智能体分析器</h1>
+            <div style="font-size:12px;color:#94a3b8;">三端 · 班级隔离</div>
+        </div>
+        <div class="nav">
+            <button class="btn btn-primary btn-sm" onclick="window.location.href='index.html'">📊 通用分析</button>
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='student.html'">📝 学生端</button>
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher.html'">📚 教师端</button>
+            <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
+            <button class="btn btn-warning btn-sm" onclick="showChangePwd()">🔑 修改密码</button>
+        </div>
+        <div class="user-info" id="userInfo">
+            <span style="color:#64748b;">未登录</span>
+        </div>
+    </div>
+
+    <!-- 班级+学生信息 -->
+    <div class="school-class-info" id="classInfo">
+        <span>🏫</span>
+        <span>学校：</span>
+        <span id="displaySchool" style="color:#f1f5f9;font-weight:500;">加载中...</span>
+        <span style="margin-left:8px;">📚</span>
+        <span>班级：</span>
+        <span id="displayClass" style="color:#f1f5f9;font-weight:500;">加载中...</span>
+        <span style="margin-left:8px;">👨‍🏫</span>
+        <span>教师：</span>
+        <span id="displayTeacher" style="color:#f1f5f9;font-weight:500;">加载中...</span>
+        <span style="margin-left:auto;" class="student-selector" onclick="showStudentSelector()">
+            👤 <span id="displayStudentName">选择学生</span> ▼
+        </span>
+    </div>
+
+    <div class="sub">📝 英语写作助手 · 学生端</div>
+
+    <!-- 任务列表 -->
+    <div class="card">
+        <div class="card-title">📋 我的任务</div>
+        <div class="task-list" id="taskList">
+            <div style="color:#64748b;padding:12px;">加载任务中...</div>
+        </div>
+    </div>
+
+    <!-- 任务详情 + 作文提交 -->
+    <div id="taskDetail" class="hidden">
+        <div class="card">
+            <div class="card-title">📌 题目要求</div>
+            <div class="card-content" id="taskRequirement">选择左侧任务查看要求</div>
+        </div>
+        <div class="card">
+            <div class="card-title">✏️ 我的作文</div>
+            <textarea id="essayInput" rows="6" placeholder="在此输入或粘贴你的作文..." style="width:100%;padding:12px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;min-height:160px;"></textarea>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+                <button class="btn btn-primary" onclick="submitEssay()">📤 提交批改</button>
+                <button class="btn btn-outline btn-sm" onclick="clearEssay()">清空</button>
+                <span style="color:#64748b;font-size:13px;margin-left:auto;" id="wordCount">字数: 0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 反馈结果 -->
+    <div id="feedbackArea" class="hidden">
+        <div class="card">
+            <div class="card-title">📊 批改反馈</div>
+            <div class="feedback-grid" id="feedbackGrid">
+                <div class="fb-item"><div class="label">📝 语法准确性</div><div class="score" id="fb-grammar">-</div><div class="comment" id="fb-grammar-cmt">等待批改...</div></div>
+                <div class="fb-item"><div class="label">📚 词汇丰富度</div><div class="score" id="fb-vocab">-</div><div class="comment" id="fb-vocab-cmt">等待批改...</div></div>
+                <div class="fb-item"><div class="label">🔗 逻辑连贯性</div><div class="score" id="fb-logic">-</div><div class="comment" id="fb-logic-cmt">等待批改...</div></div>
+                <div class="fb-item"><div class="label">🎯 语用得体性</div><div class="score" id="fb-pragmatic">-</div><div class="comment" id="fb-pragmatic-cmt">等待批改...</div></div>
+            </div>
+            <div style="margin-top:12px;padding:12px;background:#0f172a;border-radius:8px;border:1px solid #1a2332;">
+                <div style="color:#94a3b8;font-size:13px;font-weight:500;">📌 整体评语</div>
+                <div style="color:#e2e8f0;font-size:14px;margin-top:4px;" id="fb-overall">-</div>
+            </div>
+            <div style="margin-top:10px;padding:10px;background:#0f172a;border-radius:8px;border:1px solid #1a2332;">
+                <div style="color:#94a3b8;font-size:13px;font-weight:500;">📋 修改优先级</div>
+                <div style="color:#e2e8f0;font-size:14px;margin-top:4px;" id="fb-priorities">-</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">📄 修改前后对比</div>
+            <div class="compare-grid">
+                <div class="compare-box">
+                    <div class="label">📄 修改前</div>
+                    <div class="content" id="compareBefore" style="color:#94a3b8;">尚未提交修改版本</div>
+                </div>
+                <div class="compare-box">
+                    <div class="label">📄 修改后</div>
+                    <div class="content" id="compareAfter" style="color:#94a3b8;">提交修改后显示</div>
+                </div>
+            </div>
+            <div style="margin-top:10px;">
+                <button class="btn btn-success btn-sm" onclick="submitRevised()">📝 提交修改版本</button>
+                <span style="color:#64748b;font-size:12px;margin-left:8px;">修改后点击提交，系统会对比前后差异</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="status" id="status">💡 选择一个任务开始写作</div>
+</div>
+
+<!-- 修改密码弹窗 -->
+<div id="changePwdOverlay" class="change-pwd-overlay">
+    <div class="change-pwd-box">
+        <button class="close-btn" onclick="closeChangePwd()">✕</button>
+        <h2>🔑 修改密码</h2>
+        <div class="sub" id="changePwdSub">修改当前身份的登录密码</div>
+        <input id="oldPwdInput" type="password" placeholder="请输入旧密码">
+        <input id="newPwdInput" type="password" placeholder="请输入新密码">
+        <input id="confirmPwdInput" type="password" placeholder="请确认新密码">
+        <div id="changePwdError" class="error hidden"></div>
+        <div id="changePwdSuccess" class="hidden" style="color:#34d399;font-size:13px;margin-bottom:10px;">✅ 密码修改成功！</div>
+        <button class="btn btn-primary" onclick="confirmChangePwd()">确认修改</button>
+    </div>
+</div>
+
+<script src="data-utils.js"></script>
+<script>
+// ============================================================
+// 学生端 - 使用统一数据源
+// ============================================================
+
+// ---------- 权限检查 ----------
+const savedUser = localStorage.getItem('currentUser');
+if (!savedUser) { window.location.href = 'index.html'; }
+const user = JSON.parse(savedUser);
+if (user.role === 'teacher') {
+    alert('❌ 教师身份无权访问学生端');
+    window.location.href = 'index.html';
+}
+const currentUser = user;
+
+// ---------- 状态变量 ----------
+let currentClassName = '';
+let currentStudentName = localStorage.getItem('currentStudentName') || '';
+let tasks = [];
+let currentTaskId = null;
+let latestFeedback = null;
+let originalText = '';
+
+// ---------- 初始化 ----------
+function init() {
+    const teacherData = getTeacherData();
+    currentClassName = teacherData.current_class || Object.keys(teacherData.classes)[0] || '';
+    
+    // 如果学生名没选，取班级第一个学生
+    const students = getStudentNames(currentClassName);
+    if (!currentStudentName && students.length > 0) {
+        currentStudentName = students[0];
+        localStorage.setItem('currentStudentName', currentStudentName);
+    }
+    
+    tasks = getTasks(currentClassName);
+    
+    updateClassDisplay();
+    updateUserInfo();
+    renderTasks();
+    
+    document.getElementById('essayInput').addEventListener('input', updateWordCount);
+    
+    if (currentStudentName) {
+        loadStudentData(currentStudentName);
+    }
+    
+    setStatus('💡 选择任务开始写作', '');
+}
+
+// ---------- 更新班级显示 ----------
+function updateClassDisplay() {
+    const classData = getClassData(currentClassName);
+    document.getElementById('displaySchool').textContent = classData.school || '未绑定';
+    document.getElementById('displayClass').textContent = currentClassName || '未绑定';
+    document.getElementById('displayTeacher').textContent = getTeacherData().teacher_name || '未绑定';
+    document.getElementById('displayStudentName').textContent = currentStudentName || '选择学生';
+}
+
+// ---------- 学生选择器 ----------
+function showStudentSelector() {
+    const students = getStudentNames(currentClassName);
+    if (students.length === 0) {
+        alert('当前班级暂无学生，请联系教师添加');
+        return;
+    }
+    // 用下拉列表形式选择
+    const options = students.map((s, i) => `${i+1}. ${s}`).join('\n');
+    const input = prompt('选择你的姓名（输入对应编号或姓名）:\n' + options, currentStudentName);
+    if (!input) return;
+    
+    let selectedName = input.trim();
+    // 尝试按编号匹配
+    const match = selectedName.match(/^(\d+)\./);
+    if (match) {
+        const idx = parseInt(match[1]) - 1;
+        if (idx >= 0 && idx < students.length) {
+            selectedName = students[idx];
+        }
+    }
+    // 精确匹配
+    if (students.includes(selectedName)) {
+        currentStudentName = selectedName;
+        localStorage.setItem('currentStudentName', currentStudentName);
+        updateClassDisplay();
+        loadStudentData(currentStudentName);
+        setStatus('✅ 已切换为：' + currentStudentName, 'success');
+    } else {
+        alert('❌ 姓名 "' + selectedName + '" 不在班级列表中');
+    }
+}
+
+// ---------- 加载学生数据 ----------
+function loadStudentData(studentName) {
+    const submissions = getSubmissions(currentClassName);
+    const sub = submissions[studentName] || {};
+    
+    if (tasks.length > 0) {
+        const taskId = tasks[0].id;
+        const savedEssay = localStorage.getItem('essay_' + taskId + '_' + studentName);
+        document.getElementById('essayInput').value = savedEssay || sub.original || '';
+        originalText = sub.original || '';
+        updateWordCount();
+        
+        if (sub.original) {
+            // 构造反馈对象
+            latestFeedback = {
+                '语法准确性': { 评分: sub.aiScore || 0, 反馈: sub.aiFeedback || '' },
+                '词汇丰富度': { 评分: 0, 反馈: '' },
+                '逻辑连贯性': { 评分: 0, 反馈: '' },
+                '语用得体性': { 评分: 0, 反馈: '' },
+                '整体评语': sub.aiFeedback || '',
+                '修改优先级': []
+            };
+            displayFeedback(latestFeedback);
+        }
+    }
+}
+
+// ---------- 渲染任务 ----------
+function renderTasks() {
+    const container = document.getElementById('taskList');
+    tasks = getTasks(currentClassName);
+    if (tasks.length === 0) {
+        container.innerHTML = '<div style="color:#64748b;padding:12px;">暂无任务，请联系教师发布</div>';
+        return;
+    }
+    let html = '';
+    tasks.forEach(t => {
+        const isActive = currentTaskId === t.id;
+        html += `<div class="task-item ${isActive ? 'active' : ''}" onclick="selectTask('${t.id}')">
+            <div class="info">
+                <span class="title">${t.title}</span>
+                <span style="color:#64748b;font-size:12px;">📅 ${t.deadline || '无截止日期'}</span>
+            </div>
+            <span style="color:#64748b;font-size:13px;">→</span>
+        </div>`;
+    });
+    container.innerHTML = html;
+    if (tasks.length > 0 && !currentTaskId) {
+        selectTask(tasks[0].id);
+    }
+}
+
+// ---------- 选择任务 ----------
+function selectTask(taskId) {
+    currentTaskId = taskId;
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    document.getElementById('taskDetail').classList.remove('hidden');
+    document.getElementById('taskRequirement').textContent = task.requirement;
+    
+    const savedEssay = localStorage.getItem('essay_' + taskId + '_' + currentStudentName);
+    document.getElementById('essayInput').value = savedEssay || '';
+    originalText = savedEssay || '';
+    updateWordCount();
+    renderTasks();
+    loadFeedback(taskId);
+}
+
+// ---------- 加载反馈 ----------
+function loadFeedback(taskId) {
+    const savedFeedback = localStorage.getItem('feedback_' + taskId + '_' + currentStudentName);
+    if (savedFeedback) {
+        try {
+            latestFeedback = JSON.parse(savedFeedback);
+            displayFeedback(latestFeedback);
+            const orig = localStorage.getItem('original_' + taskId + '_' + currentStudentName);
+            if (orig) originalText = orig;
+            const revised = localStorage.getItem('revised_' + taskId + '_' + currentStudentName);
+            if (revised) document.getElementById('compareAfter').textContent = revised;
+            document.getElementById('feedbackArea').classList.remove('hidden');
+        } catch(e) {}
+    } else {
+        document.getElementById('feedbackArea').classList.add('hidden');
+    }
+}
+
+// ---------- 显示反馈 ----------
+function displayFeedback(fb) {
+    document.getElementById('feedbackArea').classList.remove('hidden');
+    const dims = ['语法准确性', '词汇丰富度', '逻辑连贯性', '语用得体性'];
+    const ids = ['fb-grammar', 'fb-vocab', 'fb-logic', 'fb-pragmatic'];
+    const cmts = ['fb-grammar-cmt', 'fb-vocab-cmt', 'fb-logic-cmt', 'fb-pragmatic-cmt'];
+    dims.forEach((key, i) => {
+        const val = fb[key] || {};
+        document.getElementById(ids[i]).textContent = (val.评分 ?? '-') + '/10';
+        document.getElementById(cmts[i]).textContent = val.反馈 || '-';
+    });
+    document.getElementById('fb-overall').textContent = fb.整体评语 || '-';
+    const priorities = fb.修改优先级 || [];
+    document.getElementById('fb-priorities').textContent = priorities.length ? priorities.map((p, i) => (i+1) + '. ' + p).join(' ｜ ') : '-';
+    document.getElementById('compareBefore').textContent = originalText || '（暂无原始版本）';
+    const revised = localStorage.getItem('revised_' + currentTaskId + '_' + currentStudentName);
+    document.getElementById('compareAfter').textContent = revised || '（尚未提交修改版本）';
+}
+
+// ---------- 提交作文 ----------
+async function submitEssay() {
+    const text = document.getElementById('essayInput').value.trim();
+    if (!text) { setStatus('⚠️ 请先输入作文内容', 'error'); return; }
+    if (!currentTaskId) { setStatus('⚠️ 请先选择一个任务', 'error'); return; }
+    if (!currentStudentName) { setStatus('⚠️ 请先选择学生姓名', 'error'); return; }
+    
+    localStorage.setItem('essay_' + currentTaskId + '_' + currentStudentName, text);
+    setStatus('⏳ 正在批改中...', 'loading');
+    
+    try {
+        const res = await fetch('http://127.0.0.1:5000/analyze/teaching', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const result = data.result;
+            latestFeedback = result;
+            
+            // 保存到统一数据源
+            const submissionData = {
+                original: text,
+                revised: localStorage.getItem('revised_' + currentTaskId + '_' + currentStudentName) || '',
+                aiScore: result['语法准确性']?.评分 || 0,
+                aiFeedback: result.整体评语 || '',
+                teacherComment: ''
+            };
+            syncStudentSubmission(currentClassName, currentStudentName, submissionData);
+            
+            localStorage.setItem('feedback_' + currentTaskId + '_' + currentStudentName, JSON.stringify(result));
+            localStorage.setItem('original_' + currentTaskId + '_' + currentStudentName, text);
+            originalText = text;
+            
+            displayFeedback(result);
+            setStatus('✅ 批改完成！已同步到教师端', 'success');
+        } else {
+            setStatus('❌ ' + (data.error || '批改失败'), 'error');
+        }
+    } catch(e) {
+        setStatus('❌ 网络错误: ' + e.message + '（请确认本地API服务已启动）', 'error');
+    }
+}
+
+// ---------- 提交修改版本 ----------
+function submitRevised() {
+    const text = document.getElementById('essayInput').value.trim();
+    if (!text) { setStatus('⚠️ 请先输入修改后的内容', 'error'); return; }
+    if (!currentTaskId) { setStatus('⚠️ 请先选择一个任务', 'error'); return; }
+    if (!currentStudentName) { setStatus('⚠️ 请先选择学生姓名', 'error'); return; }
+    
+    localStorage.setItem('revised_' + currentTaskId + '_' + currentStudentName, text);
+    document.getElementById('compareAfter').textContent = text;
+    
+    // 更新到统一数据源
+    const submissions = getSubmissions(currentClassName);
+    const sub = submissions[currentStudentName] || {};
+    sub.revised = text;
+    syncStudentSubmission(currentClassName, currentStudentName, sub);
+    
+    setStatus('✅ 修改版本已保存，已同步到教师端', 'success');
+}
+
+// ---------- 辅助函数 ----------
+function updateWordCount() {
+    const text = document.getElementById('essayInput').value;
+    document.getElementById('wordCount').textContent = '字数: ' + text.replace(/\s/g, '').length;
+}
+
+function clearEssay() {
+    document.getElementById('essayInput').value = '';
+    updateWordCount();
+    if (currentTaskId && currentStudentName) {
+        localStorage.removeItem('essay_' + currentTaskId + '_' + currentStudentName);
+    }
+}
+
+function setStatus(msg, type) {
+    const el = document.getElementById('status');
+    const cls = type === 'loading' ? 'loading' : type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+    el.innerHTML = '<span class="' + cls + '">' + msg + '</span>';
+}
+
+// ---------- 用户信息 ----------
+function updateUserInfo() {
+    const el = document.getElementById('userInfo');
+    if (!el) return;
+    const saved = localStorage.getItem('currentUser');
+    if (saved) {
+        try {
+            const u = JSON.parse(saved);
+            const map = { 'student': '🎓 学生', 'teacher': '👨‍🏫 教师', 'admin': '👑 管理员' };
+            const colors = { 'student': '#22c55e', 'teacher': '#3b82f6', 'admin': '#8b5cf6' };
+            el.innerHTML = `<span class="role-badge" style="background:${colors[u.role]};color:white;">${map[u.role] || '未知'}</span>`;
+        } catch(e) { el.innerHTML = '<span style="color:#64748b;">未登录</span>'; }
+    } else {
+        el.innerHTML = '<span style="color:#64748b;">未登录</span>';
+    }
+}
+
+function logout() {
+    if (!confirm('确认退出登录？')) return;
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+}
+
+// ---------- 修改密码 ----------
+function showChangePwd() {
+    if (!currentUser) { alert('请先登录'); return; }
+    document.getElementById('changePwdOverlay').style.display = 'flex';
+    document.getElementById('oldPwdInput').value = '';
+    document.getElementById('newPwdInput').value = '';
+    document.getElementById('confirmPwdInput').value = '';
+    document.getElementById('changePwdError').classList.add('hidden');
+    document.getElementById('changePwdSuccess').classList.add('hidden');
+    const roleMap = { 'student': '学生', 'teacher': '教师', 'admin': '管理员' };
+    document.getElementById('changePwdSub').textContent = '修改「' + (roleMap[currentUser.role] || '未知') + '」身份密码';
+}
+
+function closeChangePwd() {
+    document.getElementById('changePwdOverlay').style.display = 'none';
+}
+
+function confirmChangePwd() {
+    const oldPwd = document.getElementById('oldPwdInput').value.trim();
+    const newPwd = document.getElementById('newPwdInput').value.trim();
+    const confirmPwd = document.getElementById('confirmPwdInput').value.trim();
+    const error = document.getElementById('changePwdError');
+    const success = document.getElementById('changePwdSuccess');
+    error.classList.add('hidden');
+    success.classList.add('hidden');
+    if (!oldPwd) { error.textContent = '请输入旧密码'; error.classList.remove('hidden'); return; }
+    if (!newPwd || newPwd.length < 4) { error.textContent = '新密码长度至少4位'; error.classList.remove('hidden'); return; }
+    if (newPwd !== confirmPwd) { error.textContent = '两次输入的新密码不一致'; error.classList.remove('hidden'); return; }
+    const currentPwd = getPassword(currentUser.role);
+    if (oldPwd !== currentPwd) { error.textContent = '旧密码错误'; error.classList.remove('hidden'); return; }
+    setPassword(currentUser.role, newPwd);
+    success.textContent = '✅ 密码修改成功！';
+    success.classList.remove('hidden');
+    document.getElementById('oldPwdInput').value = '';
+    document.getElementById('newPwdInput').value = '';
+    document.getElementById('confirmPwdInput').value = '';
+    setTimeout(() => { closeChangePwd(); alert('密码已修改，请重新登录'); logout(); }, 1500);
+}
+
+// ---------- 启动 ----------
+init();
+</script>
+</body>
+</html>
