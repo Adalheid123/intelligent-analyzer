@@ -1,0 +1,12 @@
+echo { > railway.json
+echo   "$schema": "https://railway.app/railway.schema.json", >> railway.json
+echo   "build": { >> railway.json
+echo     "builder": "NIXPACKS" >> railway.json
+echo   }, >> railway.json
+echo   "deploy": { >> railway.json
+echo     "numReplicas": 1, >> railway.json
+echo     "startCommand": "python app.py", >> railway.json
+echo     "healthcheckPath": "/", >> railway.json
+echo     "restartPolicyType": "ON_FAILURE" >> railway.json
+echo   } >> railway.json
+echo } >> railway.json
