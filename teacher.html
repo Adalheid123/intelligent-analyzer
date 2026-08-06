@@ -81,11 +81,23 @@
         .change-pwd-box .btn{width:100%;}
         .change-pwd-box .close-btn{position:absolute;top:12px;right:16px;color:#94a3b8;cursor:pointer;font-size:20px;background:none;border:none;}
         @media(max-width:768px){.row{flex-direction:column;align-items:stretch;}.detail-grid{grid-template-columns:1fr;}}
+        .login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:9999;}
+        .login-box{background:#1e293b;padding:40px;border-radius:20px;border:1px solid #334155;max-width:420px;width:90%;text-align:center;position:relative;}
+        .login-box h2{color:#f1f5f9;margin-bottom:8px;}
+        .login-box .sub{color:#94a3b8;font-size:14px;margin-bottom:20px;}
+        .login-box input{width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:16px;margin-bottom:12px;font-family:inherit;}
+        .login-box input:focus{outline:none;border-color:#3b82f6;}
+        .login-box .error{color:#ef4444;font-size:13px;margin-bottom:10px;}
+        .login-box .btn{width:100%;}
+        .login-box .close-btn{position:absolute;top:12px;right:16px;color:#94a3b8;cursor:pointer;font-size:20px;background:none;border:none;}
+        .input-wrapper{position:relative;margin-bottom:12px;}
+        .suggestions{position:absolute;top:100%;left:0;right:0;background:#0f172a;border:1px solid #334155;border-radius:10px;max-height:150px;overflow-y:auto;display:none;z-index:100;color:#e2e8f0;}
+        .suggestions div{padding:8px 14px;cursor:pointer;border-bottom:1px solid #1a2332;}
+        .suggestions div:hover{background:#1e293b;}
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- 顶部导航栏 -->
     <div class="top-bar">
         <div>
             <h1 style="font-size:18px;color:#f1f5f9;margin:0;">🧠 智能体分析器</h1>
@@ -103,7 +115,6 @@
         </div>
     </div>
 
-    <!-- 班级选择器 -->
     <div class="class-selector">
         <span style="color:#94a3b8;font-size:13px;">📚 当前班级：</span>
         <select id="classSelect" onchange="switchClass()"></select>
@@ -114,7 +125,6 @@
 
     <div class="sub">📚 英语教学管理 · 教师端</div>
 
-    <!-- 发布任务 -->
     <div class="card">
         <div class="card-title">📌 发布新任务</div>
         <div class="row">
@@ -130,7 +140,6 @@
         </div>
     </div>
 
-    <!-- 任务列表 -->
     <div class="card">
         <div class="card-title">📋 已发布任务</div>
         <div id="taskList">
@@ -138,7 +147,6 @@
         </div>
     </div>
 
-    <!-- 学生提交详情 -->
     <div id="studentDetail" class="hidden">
         <div class="card">
             <div class="card-title">👤 学生详情 <span id="studentNameDisplay" style="color:#f1f5f9;font-weight:500;"></span></div>
@@ -173,7 +181,32 @@
     <div class="status" id="status">💡 发布任务后，学生端会自动同步</div>
 </div>
 
-<!-- 修改密码弹窗 -->
+<!-- ===== 登录弹窗 ===== -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+        <button class="close-btn" onclick="closeLogin()">✕</button>
+        <h2 id="loginTitle">👨‍🏫 教师端 · 身份验证</h2>
+        <div class="sub" id="loginSub">选择或输入学校、专业、班级，并输入密码</div>
+        <div class="input-wrapper">
+            <input id="loginSchool" type="text" placeholder="输入或选择学校..." oninput="filterSchoolOptions()" onfocus="filterSchoolOptions()" autocomplete="off">
+            <div id="schoolSuggestions" class="suggestions"></div>
+        </div>
+        <div class="input-wrapper">
+            <input id="loginMajor" type="text" placeholder="输入或选择专业..." oninput="filterMajorOptions()" onfocus="filterMajorOptions()" autocomplete="off">
+            <div id="majorSuggestions" class="suggestions"></div>
+        </div>
+        <div class="input-wrapper">
+            <input id="loginClass" type="text" placeholder="输入或选择班级..." oninput="filterClassOptions()" onfocus="filterClassOptions()" autocomplete="off">
+            <div id="classSuggestions" class="suggestions"></div>
+        </div>
+        <input id="loginApiKey" type="password" placeholder="DeepSeek API Key（sk-xxx...）" style="width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:14px;margin-bottom:12px;font-family:inherit;">
+        <input id="loginPassword" type="password" placeholder="请输入密码..." onkeydown="if(event.key==='Enter') confirmLogin()" style="margin-bottom:12px;">
+        <div id="loginError" class="error hidden">请完善所有信息</div>
+        <button class="btn btn-primary" onclick="confirmLogin()">确认</button>
+    </div>
+</div>
+
+<!-- ===== 修改密码弹窗 ===== -->
 <div id="changePwdOverlay" class="change-pwd-overlay">
     <div class="change-pwd-box">
         <button class="close-btn" onclick="document.getElementById('changePwdOverlay').style.display='none'">✕</button>
@@ -188,7 +221,7 @@
     </div>
 </div>
 
-<!-- 管理学生弹窗 -->
+<!-- ===== 管理学生弹窗 ===== -->
 <div id="manageStudentsOverlay" class="manage-students-overlay">
     <div class="manage-students-box">
         <button class="close-btn" onclick="document.getElementById('manageStudentsOverlay').style.display='none'">✕</button>
@@ -208,43 +241,210 @@
 <script src="data-utils.js"></script>
 <script>
 // ============================================================
-// 教师端 - 使用统一数据源
+// 教师端
 // ============================================================
 
-// 权限检查
-const savedUser = localStorage.getItem('currentUser');
-if (!savedUser) { window.location.href = 'index.html'; }
-const user = JSON.parse(savedUser);
-if (user.role === 'student') {
-    alert('❌ 学生身份无权访问教师端');
-    window.location.href = 'index.html';
-}
-const currentUser = user;
-const isAdmin = currentUser.role === 'admin';
+const API_BASE = 'https://intelligent-analyzer-production-2265.up.railway.app';
 
+let currentUser = null;
+let currentSchool = '';
+let currentMajor = '';
 let currentClassName = '';
 let currentTaskId = null;
 
 // ============================================================
-// 页面初始化
+// 筛选函数（学校/专业/班级联想）
+// ============================================================
+function filterSchoolOptions() {
+    const input = document.getElementById('loginSchool');
+    const container = document.getElementById('schoolSuggestions');
+    const val = input.value.toLowerCase().trim();
+    const schools = getAllSchools();
+    let matched = val ? schools.filter(s => s.toLowerCase().includes(val)) : schools.slice(0, 20);
+    if (matched.length === 0) { container.style.display = 'none'; return; }
+    container.innerHTML = '';
+    matched.forEach(s => {
+        const div = document.createElement('div');
+        div.textContent = s;
+        div.onclick = function() {
+            input.value = s;
+            container.style.display = 'none';
+            document.getElementById('loginMajor').value = '';
+            document.getElementById('loginClass').value = '';
+            filterMajorOptions();
+        };
+        container.appendChild(div);
+    });
+    container.style.display = 'block';
+}
+
+function filterMajorOptions() {
+    const school = document.getElementById('loginSchool').value.trim();
+    const input = document.getElementById('loginMajor');
+    const container = document.getElementById('majorSuggestions');
+    const val = input.value.toLowerCase().trim();
+    if (!school) { container.style.display = 'none'; return; }
+    const majors = getMajorsBySchool(school);
+    let matched = val ? majors.filter(m => m.toLowerCase().includes(val)) : majors.slice(0, 20);
+    if (matched.length === 0) { container.style.display = 'none'; return; }
+    container.innerHTML = '';
+    matched.forEach(m => {
+        const div = document.createElement('div');
+        div.textContent = m;
+        div.onclick = function() {
+            input.value = m;
+            container.style.display = 'none';
+            document.getElementById('loginClass').value = '';
+            filterClassOptions();
+        };
+        container.appendChild(div);
+    });
+    container.style.display = 'block';
+}
+
+function filterClassOptions() {
+    const school = document.getElementById('loginSchool').value.trim();
+    const major = document.getElementById('loginMajor').value.trim();
+    const input = document.getElementById('loginClass');
+    const container = document.getElementById('classSuggestions');
+    const val = input.value.toLowerCase().trim();
+    if (!school || !major) { container.style.display = 'none'; return; }
+    const classes = getClassesByMajor(school, major);
+    let matched = val ? classes.filter(c => c.toLowerCase().includes(val)) : classes.slice(0, 20);
+    if (matched.length === 0) { container.style.display = 'none'; return; }
+    container.innerHTML = '';
+    matched.forEach(c => {
+        const div = document.createElement('div');
+        div.textContent = c;
+        div.onclick = function() {
+            input.value = c;
+            container.style.display = 'none';
+        };
+        container.appendChild(div);
+    });
+    container.style.display = 'block';
+}
+
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.suggestions').forEach(el => {
+        if (!el.contains(e.target) && !el.previousElementSibling.contains(e.target)) {
+            el.style.display = 'none';
+        }
+    });
+});
+
+// ============================================================
+// 登录相关
+// ============================================================
+function showLogin() {
+    const overlay = document.getElementById('loginOverlay');
+    overlay.style.display = 'flex';
+    document.getElementById('loginApiKey').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginError').classList.add('hidden');
+    document.getElementById('loginSchool').value = '';
+    document.getElementById('loginMajor').value = '';
+    document.getElementById('loginClass').value = '';
+    document.getElementById('schoolSuggestions').style.display = 'none';
+    document.getElementById('majorSuggestions').style.display = 'none';
+    document.getElementById('classSuggestions').style.display = 'none';
+    setTimeout(() => filterSchoolOptions(), 100);
+}
+
+function closeLogin() {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('loginError').classList.add('hidden');
+}
+
+function confirmLogin() {
+    const school = document.getElementById('loginSchool').value.trim();
+    const major = document.getElementById('loginMajor').value.trim();
+    const className = document.getElementById('loginClass').value.trim();
+    const apiKey = document.getElementById('loginApiKey').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const error = document.getElementById('loginError');
+
+    if (!school) { error.textContent = '请输入或选择学校'; error.classList.remove('hidden'); return; }
+    if (!major) { error.textContent = '请输入或选择专业'; error.classList.remove('hidden'); return; }
+    if (!className) { error.textContent = '请输入或选择班级'; error.classList.remove('hidden'); return; }
+    if (!apiKey) { error.textContent = '请输入 DeepSeek API Key'; error.classList.remove('hidden'); return; }
+    if (!password) { error.textContent = '请输入密码'; error.classList.remove('hidden'); return; }
+
+    // 先检查管理员密码
+    if (password === getPassword('admin')) {
+        localStorage.setItem('deepseek_api_key', apiKey);
+        localStorage.setItem('currentSchool', school);
+        localStorage.setItem('currentMajor', major);
+        localStorage.setItem('currentClass', className);
+        currentUser = { role: 'admin', school: school, major: major, class: className };
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        closeLogin();
+        updateUserInfo();
+        init();
+        setStatus('✅ 管理员登录成功！', 'success');
+        return;
+    }
+
+    // 再检查教师密码
+    if (password === getPassword('teacher')) {
+        localStorage.setItem('deepseek_api_key', apiKey);
+        localStorage.setItem('currentSchool', school);
+        localStorage.setItem('currentMajor', major);
+        localStorage.setItem('currentClass', className);
+        currentUser = { role: 'teacher', school: school, major: major, class: className };
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        closeLogin();
+        updateUserInfo();
+        init();
+        setStatus('✅ 教师登录成功！', 'success');
+        return;
+    }
+
+    error.textContent = '密码错误，请重新输入';
+    error.classList.remove('hidden');
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginPassword').focus();
+}
+
+// ============================================================
+// 初始化
 // ============================================================
 function init() {
-    const teacherData = getTeacherData();
-    currentClassName = teacherData.current_class || Object.keys(teacherData.classes)[0] || '';
-    
+    const saved = localStorage.getItem('currentUser');
+    if (!saved) {
+        showLogin();
+        return;
+    }
+    try {
+        const user = JSON.parse(saved);
+        if (user.role === 'guest' || !user.school || !user.class) {
+            showLogin();
+            return;
+        }
+        if (user.role !== 'teacher' && user.role !== 'admin' && user.role !== 'student') {
+            showLogin();
+            return;
+        }
+        currentUser = user;
+    } catch(e) {
+        showLogin();
+        return;
+    }
+
+    const { school, major, className } = getUserSchoolAndClass();
+    currentSchool = school || Object.keys(getTeacherData().schools)[0] || '';
+    currentMajor = major || '';
+    currentClassName = className || '';
+
     updateUserInfo();
     renderClassSelector();
     renderTasks();
     updateStudentCount();
-    
-    // 默认隐藏学生详情
+
     document.getElementById('studentDetail').classList.add('hidden');
     setStatus('👋 欢迎回来！', 'success');
 }
 
-// ============================================================
-// 用户信息
-// ============================================================
 function updateUserInfo() {
     const el = document.getElementById('userInfo');
     if (!el) return;
@@ -264,12 +464,278 @@ function updateUserInfo() {
 function logout() {
     if (!confirm('确认退出登录？')) return;
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('deepseek_api_key');
+    localStorage.removeItem('currentSchool');
+    localStorage.removeItem('currentMajor');
+    localStorage.removeItem('currentClass');
     window.location.href = 'index.html';
 }
 
-// ============================================================
-// 修改密码
-// ============================================================
+function renderClassSelector() {
+    const select = document.getElementById('classSelect');
+    const classNames = getClassesByMajor(currentSchool, currentMajor);
+    select.innerHTML = '';
+    classNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        const classData = getClassDataByPath(currentSchool, currentMajor, name);
+        opt.textContent = name + ' (' + (classData?.students || []).length + '人)';
+        if (name === currentClassName) opt.selected = true;
+        select.appendChild(opt);
+    });
+    if (classNames.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '暂无班级，请创建';
+        select.appendChild(opt);
+    }
+    updateStudentCount();
+}
+
+function switchClass() {
+    const select = document.getElementById('classSelect');
+    const newClass = select.value;
+    if (newClass && newClass !== currentClassName) {
+        currentClassName = newClass;
+        setUserSchoolAndClass(currentSchool, currentMajor, currentClassName);
+        renderTasks();
+        updateStudentCount();
+        document.getElementById('studentDetail').classList.add('hidden');
+        setStatus('✅ 已切换到：' + newClass, 'success');
+    }
+}
+
+function updateStudentCount() {
+    const classData = getClassDataByPath(currentSchool, currentMajor, currentClassName);
+    const count = classData?.students?.length || 0;
+    document.getElementById('studentCount').textContent = '学生：' + count + '人';
+}
+
+function showCreateClass() {
+    const name = prompt('请输入新班级名称（当前学校：' + currentSchool + '，当前专业：' + currentMajor + '）：');
+    if (name && name.trim()) {
+        const className = name.trim();
+        const existing = getClassesByMajor(currentSchool, currentMajor);
+        if (existing.includes(className)) {
+            alert('❌ 班级 "' + className + '" 已存在');
+            return;
+        }
+        if (createClass(currentSchool, currentMajor, className)) {
+            currentClassName = className;
+            setUserSchoolAndClass(currentSchool, currentMajor, currentClassName);
+            renderClassSelector();
+            renderTasks();
+            updateStudentCount();
+            setStatus('✅ 已创建班级：' + className, 'success');
+        }
+    }
+}
+
+function showManageStudents() {
+    document.getElementById('manageStudentsOverlay').style.display = 'flex';
+    document.getElementById('newStudentName').value = '';
+    document.getElementById('manageClassName').textContent = currentClassName;
+    renderStudentList();
+}
+
+function renderStudentList() {
+    const container = document.getElementById('studentListManage');
+    const classData = getClassDataByPath(currentSchool, currentMajor, currentClassName);
+    const students = classData?.students || [];
+    if (students.length === 0) {
+        container.innerHTML = '<div style="color:#64748b;padding:12px;text-align:center;">暂无学生</div>';
+        return;
+    }
+    let html = '';
+    students.forEach(name => {
+        html += `<div class="student-item">
+            <span class="name">${name}</span>
+            <button class="del-btn" onclick="removeStudent('${name}')">移除</button>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function addStudent() {
+    const name = document.getElementById('newStudentName').value.trim();
+    if (!name) { alert('请输入学生姓名'); return; }
+    if (addStudentToClass(currentSchool, currentMajor, currentClassName, name)) {
+        document.getElementById('newStudentName').value = '';
+        renderStudentList();
+        renderClassSelector();
+        updateStudentCount();
+        setStatus('✅ 已添加学生：' + name, 'success');
+    } else {
+        alert('学生 "' + name + '" 已存在');
+    }
+}
+
+function removeStudent(name) {
+    if (!confirm('确定移除学生 "' + name + '" 吗？（相关数据将被删除）')) return;
+    removeStudentFromClass(currentSchool, currentMajor, currentClassName, name);
+    renderStudentList();
+    renderClassSelector();
+    updateStudentCount();
+    setStatus('✅ 已移除学生：' + name, 'success');
+}
+
+function publishTask() {
+    const title = document.getElementById('newTaskTitle').value.trim();
+    const requirement = document.getElementById('newTaskRequirement').value.trim();
+    const deadline = document.getElementById('newTaskDeadline').value;
+    if (!title) { setStatus('⚠️ 请输入任务标题', 'error'); return; }
+    if (!requirement) { setStatus('⚠️ 请输入任务要求', 'error'); return; }
+
+    const taskData = {
+        id: 't' + Date.now(),
+        title: title,
+        requirement: requirement,
+        deadline: deadline || '无截止日期',
+        status: 'active'
+    };
+    publishTaskToClass(currentSchool, currentMajor, currentClassName, taskData);
+    renderTasks();
+    clearNewTask();
+    setStatus('✅ 任务发布成功！', 'success');
+}
+
+function clearNewTask() {
+    document.getElementById('newTaskTitle').value = '';
+    document.getElementById('newTaskRequirement').value = '';
+    document.getElementById('newTaskDeadline').value = '';
+}
+
+function deleteTask(taskId) {
+    if (!confirm('确定要删除这个任务吗？')) return;
+    deleteTaskFromClass(currentSchool, currentMajor, currentClassName, taskId);
+    renderTasks();
+    setStatus('✅ 任务已删除', 'success');
+}
+
+function renderTasks() {
+    const classData = getClassDataByPath(currentSchool, currentMajor, currentClassName);
+    const tasks = classData?.tasks || [];
+    const container = document.getElementById('taskList');
+    if (tasks.length === 0) {
+        container.innerHTML = '<div style="color:#64748b;padding:8px;">暂无任务</div>';
+        return;
+    }
+    let html = '';
+    tasks.forEach(t => {
+        html += `<div class="task-item">
+            <span class="title">📌 ${t.title}</span>
+            <span class="info">📅 ${t.deadline || '无截止'}</span>
+            <span style="display:flex;gap:6px;align-items:center;">
+                <button class="btn btn-outline btn-sm" onclick="viewSubmissions('${t.id}')">👥 查看提交</button>
+                <span class="del" onclick="deleteTask('${t.id}')">✕</span>
+            </span>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function viewSubmissions(taskId) {
+    const classData = getClassDataByPath(currentSchool, currentMajor, currentClassName);
+    const submissions = classData?.submissions || {};
+    const students = classData?.students || [];
+    const tasks = classData?.tasks || [];
+    const task = tasks.find(t => t.id === taskId);
+    const taskTitle = task ? task.title : '当前任务';
+
+    const submittedStudents = students.filter(name => {
+        const sub = submissions[name];
+        return sub && sub.original && sub.original.trim().length > 0;
+    });
+
+    if (submittedStudents.length === 0) {
+        setStatus('📋 该任务暂无学生提交', 'success');
+        const container = document.getElementById('taskList');
+        const existing = container.querySelector('.submission-wrapper');
+        if (existing) existing.remove();
+        return;
+    }
+
+    let html = `<div style="margin-top:10px;background:#0f172a;border-radius:10px;padding:14px;border:1px solid #334155;">
+        <div style="color:#f1f5f9;font-weight:600;margin-bottom:8px;">📋 ${taskTitle} - 已提交 (${submittedStudents.length}人)</div>`;
+
+    submittedStudents.forEach(name => {
+        const sub = submissions[name] || {};
+        const hasRevised = sub.revised && sub.revised.trim().length > 0;
+        const statusText = hasRevised ? '已修改' : '待修改';
+        const statusClass = hasRevised ? 'status-submitted' : 'status-pending';
+        const scoreText = sub.aiScore ? sub.aiScore + '/10' : '待批改';
+        html += `<div class="student-item">
+            <span class="name">${name}</span>
+            <span class="info">${scoreText}</span>
+            <span class="status-tag ${statusClass}">${statusText}</span>
+            <div class="actions">
+                <button class="btn btn-primary btn-sm" onclick="viewStudentDetail('${name}')">📖 查看</button>
+            </div>
+        </div>`;
+    });
+    html += `</div>`;
+
+    const container = document.getElementById('taskList');
+    const existing = container.querySelector('.submission-wrapper');
+    if (existing) existing.remove();
+    const wrapper = document.createElement('div');
+    wrapper.className = 'submission-wrapper';
+    wrapper.innerHTML = html;
+    container.appendChild(wrapper);
+}
+
+function viewStudentDetail(name) {
+    const classData = getClassDataByPath(currentSchool, currentMajor, currentClassName);
+    const sub = classData?.submissions?.[name] || {};
+
+    const detailEl = document.getElementById('studentDetail');
+    detailEl.classList.remove('hidden');
+    document.getElementById('studentNameDisplay').textContent = name;
+    document.getElementById('studentOriginal').textContent = sub.original || '暂无提交';
+    document.getElementById('studentRevised').textContent = sub.revised || '暂无修改';
+    document.getElementById('studentAIScore').textContent = sub.aiScore ? sub.aiScore + '/10' : '待批改';
+    document.getElementById('studentAIFeedback').textContent = sub.aiFeedback || '暂无反馈';
+    document.getElementById('teacherComment').value = sub.teacherComment || '';
+
+    detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setStatus(`👤 正在查看 ${name} 的作业详情`, 'success');
+}
+
+function saveTeacherComment() {
+    const name = document.getElementById('studentNameDisplay').textContent.trim();
+    if (!name) { setStatus('⚠️ 请先选择一名学生', 'error'); return; }
+
+    const comment = document.getElementById('teacherComment').value.trim();
+    if (!comment) { setStatus('⚠️ 请输入指导内容', 'error'); return; }
+
+    const classData = getClassDataByPath(currentSchool, currentMajor, currentClassName);
+    if (!classData) return;
+    if (!classData.submissions) classData.submissions = {};
+    if (!classData.submissions[name]) classData.submissions[name] = {};
+    classData.submissions[name].teacherComment = comment;
+
+    const teacherData = getTeacherData();
+    teacherData.schools[currentSchool].majors[currentMajor].classes[currentClassName] = classData;
+    saveTeacherData(teacherData);
+
+    setStatus(`✅ 已保存对 ${name} 的指导`, 'success');
+}
+
+function setStatus(message, type = 'info') {
+    const statusEl = document.getElementById('status');
+    if (!statusEl) return;
+    const icons = { 'info': '💡', 'success': '✅', 'error': '❌', 'loading': '⏳' };
+    const classes = { 'info': '', 'success': 'success', 'error': 'error', 'loading': 'loading' };
+    statusEl.innerHTML = `<span class="${classes[type] || ''}">${icons[type] || '💡'} ${message}</span>`;
+    if (type !== 'loading') {
+        setTimeout(() => {
+            if (statusEl.querySelector('.success') || statusEl.querySelector('.error')) {
+                statusEl.innerHTML = '💡 发布任务后，学生端会自动同步';
+            }
+        }, 3000);
+    }
+}
+
 function showChangePwd() {
     if (!currentUser) { alert('请先登录'); return; }
     document.getElementById('changePwdOverlay').style.display = 'flex';
@@ -304,298 +770,6 @@ function confirmChangePwd() {
     setTimeout(() => { document.getElementById('changePwdOverlay').style.display = 'none'; alert('密码已修改，请重新登录'); logout(); }, 1500);
 }
 
-// ============================================================
-// 班级管理
-// ============================================================
-function renderClassSelector() {
-    const select = document.getElementById('classSelect');
-    const classNames = getAllClassNames();
-    select.innerHTML = '';
-    classNames.forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        const classData = getClassData(name);
-        opt.textContent = name + ' (' + (classData.students || []).length + '人)';
-        if (name === currentClassName) opt.selected = true;
-        select.appendChild(opt);
-    });
-    if (classNames.length === 0) {
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.textContent = '暂无班级，请创建';
-        select.appendChild(opt);
-    }
-    updateStudentCount();
-}
-
-function switchClass() {
-    const select = document.getElementById('classSelect');
-    const newClass = select.value;
-    if (newClass && newClass !== currentClassName) {
-        if (switchClass(newClass)) {
-            currentClassName = newClass;
-            renderTasks();
-            updateStudentCount();
-            // 隐藏学生详情
-            document.getElementById('studentDetail').classList.add('hidden');
-            setStatus('✅ 已切换到：' + newClass, 'success');
-        }
-    }
-}
-
-function updateStudentCount() {
-    const students = getStudentNames(currentClassName);
-    document.getElementById('studentCount').textContent = '学生：' + students.length + '人';
-}
-
-function showCreateClass() {
-    const name = prompt('请输入新班级名称：');
-    if (name && name.trim()) {
-        const className = name.trim();
-        const teacherData = getTeacherData();
-        if (teacherData.classes[className]) {
-            alert('❌ 班级 "' + className + '" 已存在');
-            return;
-        }
-        teacherData.classes[className] = {
-            school: '天津农学院',
-            students: [],
-            tasks: [],
-            submissions: {}
-        };
-        teacherData.current_class = className;
-        saveTeacherData(teacherData);
-        currentClassName = className;
-        renderClassSelector();
-        renderTasks();
-        updateStudentCount();
-        setStatus('✅ 已创建班级：' + className, 'success');
-    }
-}
-
-function showManageStudents() {
-    document.getElementById('manageStudentsOverlay').style.display = 'flex';
-    document.getElementById('newStudentName').value = '';
-    document.getElementById('manageClassName').textContent = currentClassName;
-    renderStudentList();
-}
-
-function renderStudentList() {
-    const container = document.getElementById('studentListManage');
-    const students = getStudentNames(currentClassName);
-    if (students.length === 0) {
-        container.innerHTML = '<div style="color:#64748b;padding:12px;text-align:center;">暂无学生</div>';
-        return;
-    }
-    let html = '';
-    students.forEach(name => {
-        html += `<div class="student-item">
-            <span class="name">${name}</span>
-            <button class="del-btn" onclick="removeStudent('${name}')">移除</button>
-        </div>`;
-    });
-    container.innerHTML = html;
-}
-
-function addStudent() {
-    const name = document.getElementById('newStudentName').value.trim();
-    if (!name) { alert('请输入学生姓名'); return; }
-    if (addStudentToClass(currentClassName, name)) {
-        document.getElementById('newStudentName').value = '';
-        renderStudentList();
-        renderClassSelector();
-        updateStudentCount();
-        setStatus('✅ 已添加学生：' + name, 'success');
-    } else {
-        alert('学生 "' + name + '" 已存在');
-    }
-}
-
-function removeStudent(name) {
-    if (!confirm('确定移除学生 "' + name + '" 吗？（相关数据将被删除）')) return;
-    removeStudentFromClass(currentClassName, name);
-    renderStudentList();
-    renderClassSelector();
-    updateStudentCount();
-    setStatus('✅ 已移除学生：' + name, 'success');
-}
-
-// ============================================================
-// 任务管理
-// ============================================================
-function publishTask() {
-    const title = document.getElementById('newTaskTitle').value.trim();
-    const requirement = document.getElementById('newTaskRequirement').value.trim();
-    const deadline = document.getElementById('newTaskDeadline').value;
-    if (!title) { setStatus('⚠️ 请输入任务标题', 'error'); return; }
-    if (!requirement) { setStatus('⚠️ 请输入任务要求', 'error'); return; }
-    
-    const taskData = {
-        id: 't' + Date.now(),
-        title: title,
-        requirement: requirement,
-        deadline: deadline || '无截止日期',
-        status: 'active'
-    };
-    publishTaskToClass(currentClassName, taskData);
-    renderTasks();
-    clearNewTask();
-    setStatus('✅ 任务发布成功！', 'success');
-}
-
-function clearNewTask() {
-    document.getElementById('newTaskTitle').value = '';
-    document.getElementById('newTaskRequirement').value = '';
-    document.getElementById('newTaskDeadline').value = '';
-}
-
-function deleteTask(taskId) {
-    if (!confirm('确定要删除这个任务吗？')) return;
-    deleteTaskFromClass(currentClassName, taskId);
-    renderTasks();
-    setStatus('✅ 任务已删除', 'success');
-}
-
-function renderTasks() {
-    const tasks = getTasks(currentClassName);
-    const container = document.getElementById('taskList');
-    if (tasks.length === 0) {
-        container.innerHTML = '<div style="color:#64748b;padding:8px;">暂无任务</div>';
-        return;
-    }
-    let html = '';
-    tasks.forEach(t => {
-        html += `<div class="task-item">
-            <span class="title">📌 ${t.title}</span>
-            <span class="info">📅 ${t.deadline || '无截止'}</span>
-            <span style="display:flex;gap:6px;align-items:center;">
-                <button class="btn btn-outline btn-sm" onclick="viewSubmissions('${t.id}')">👥 查看提交</button>
-                <span class="del" onclick="deleteTask('${t.id}')">✕</span>
-            </span>
-        </div>`;
-    });
-    container.innerHTML = html;
-}
-
-// ============================================================
-// 查看提交
-// ============================================================
-function viewSubmissions(taskId) {
-    const submissions = getSubmissions(currentClassName);
-    const students = getStudentNames(currentClassName);
-    const tasks = getTasks(currentClassName);
-    const task = tasks.find(t => t.id === taskId);
-    const taskTitle = task ? task.title : '当前任务';
-    
-    // 找出有提交的学生
-    const submittedStudents = students.filter(name => {
-        const sub = submissions[name];
-        return sub && sub.original && sub.original.trim().length > 0;
-    });
-    
-    if (submittedStudents.length === 0) {
-        setStatus('📋 该任务暂无学生提交', 'success');
-        const container = document.getElementById('taskList');
-        const existing = container.querySelector('.submission-wrapper');
-        if (existing) existing.remove();
-        return;
-    }
-    
-    let html = `<div style="margin-top:10px;background:#0f172a;border-radius:10px;padding:14px;border:1px solid #334155;">
-        <div style="color:#f1f5f9;font-weight:600;margin-bottom:8px;">📋 ${taskTitle} - 已提交 (${submittedStudents.length}人)</div>`;
-    
-    submittedStudents.forEach(name => {
-        const sub = submissions[name] || {};
-        const hasRevised = sub.revised && sub.revised.trim().length > 0;
-        const statusText = hasRevised ? '已修改' : '待修改';
-        const statusClass = hasRevised ? 'status-submitted' : 'status-pending';
-        const scoreText = sub.aiScore ? sub.aiScore + '/10' : '待批改';
-        html += `<div class="student-item">
-            <span class="name">${name}</span>
-            <span class="info">${scoreText}</span>
-            <span class="status-tag ${statusClass}">${statusText}</span>
-            <div class="actions">
-                <button class="btn btn-primary btn-sm" onclick="viewStudentDetail('${name}')">📖 查看</button>
-            </div>
-        </div>`;
-    });
-    html += `</div>`;
-    
-    const container = document.getElementById('taskList');
-    const existing = container.querySelector('.submission-wrapper');
-    if (existing) existing.remove();
-    const wrapper = document.createElement('div');
-    wrapper.className = 'submission-wrapper';
-    wrapper.innerHTML = html;
-    container.appendChild(wrapper);
-}
-
-// ============================================================
-// 查看学生详情
-// ============================================================
-function viewStudentDetail(name) {
-    const submissions = getSubmissions(currentClassName);
-    const sub = submissions[name] || {};
-    
-    const detailEl = document.getElementById('studentDetail');
-    detailEl.classList.remove('hidden');
-    document.getElementById('studentNameDisplay').textContent = name;
-    document.getElementById('studentOriginal').textContent = sub.original || '暂无提交';
-    document.getElementById('studentRevised').textContent = sub.revised || '暂无修改';
-    document.getElementById('studentAIScore').textContent = sub.aiScore ? sub.aiScore + '/10' : '待批改';
-    document.getElementById('studentAIFeedback').textContent = sub.aiFeedback || '暂无反馈';
-    document.getElementById('teacherComment').value = sub.teacherComment || '';
-    
-    detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setStatus(`👤 正在查看 ${name} 的作业详情`, 'success');
-}
-
-// ============================================================
-// 保存教师指导
-// ============================================================
-function saveTeacherComment() {
-    const name = document.getElementById('studentNameDisplay').textContent.trim();
-    if (!name) { setStatus('⚠️ 请先选择一名学生', 'error'); return; }
-    
-    const comment = document.getElementById('teacherComment').value.trim();
-    if (!comment) { setStatus('⚠️ 请输入指导内容', 'error'); return; }
-    
-    const submissions = getSubmissions(currentClassName);
-    if (!submissions[name]) submissions[name] = {};
-    submissions[name].teacherComment = comment;
-    
-    // 保存到 teacher_data
-    const teacherData = getTeacherData();
-    if (!teacherData.classes[currentClassName].submissions) {
-        teacherData.classes[currentClassName].submissions = {};
-    }
-    teacherData.classes[currentClassName].submissions[name] = submissions[name];
-    saveTeacherData(teacherData);
-    
-    setStatus(`✅ 已保存对 ${name} 的指导`, 'success');
-}
-
-// ============================================================
-// 工具函数
-// ============================================================
-function setStatus(message, type = 'info') {
-    const statusEl = document.getElementById('status');
-    if (!statusEl) return;
-    const icons = { 'info': '💡', 'success': '✅', 'error': '❌', 'loading': '⏳' };
-    const classes = { 'info': '', 'success': 'success', 'error': 'error', 'loading': 'loading' };
-    statusEl.innerHTML = `<span class="${classes[type] || ''}">${icons[type] || '💡'} ${message}</span>`;
-    if (type !== 'loading') {
-        setTimeout(() => {
-            if (statusEl.querySelector('.success') || statusEl.querySelector('.error')) {
-                statusEl.innerHTML = '💡 发布任务后，学生端会自动同步';
-            }
-        }, 3000);
-    }
-}
-
-// ============================================================
-// 键盘快捷键
-// ============================================================
 document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.key === 'Enter') {
         const activeEl = document.activeElement;
@@ -610,9 +784,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// ============================================================
-// 点击外部关闭弹窗
-// ============================================================
 document.querySelectorAll('.change-pwd-overlay, .manage-students-overlay').forEach(overlay => {
     overlay.addEventListener('click', function(e) {
         if (e.target === this) {
@@ -621,9 +792,6 @@ document.querySelectorAll('.change-pwd-overlay, .manage-students-overlay').forEa
     });
 });
 
-// ============================================================
-// 启动
-// ============================================================
 init();
 </script>
 </body>
