@@ -4,7 +4,6 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
-import whisper
 
 app = Flask(__name__)
 CORS(app)
@@ -17,13 +16,6 @@ if not DEEPSEEK_API_KEY:
 
 openai.api_key = DEEPSEEK_API_KEY
 openai.base_url = DEEPSEEK_BASE_URL
-
-# ============================================================
-# 加载 whisper-tiny 语音识别模型（74MB，超轻量）
-# ============================================================
-print("🔄 正在加载 whisper-tiny 模型（74MB）...")
-whisper_model = whisper.load_model("tiny")
-print("✅ whisper-tiny 模型加载完成！")
 
 # ============================================================
 # 路由：根路径
@@ -111,27 +103,6 @@ def analyze_teaching():
             return jsonify({"success": True, "result": result})
         else:
             return jsonify({"success": False, "error": "JSON解析失败"}), 500
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-# ============================================================
-# 路由：Whisper 语音识别（tiny 模型）
-# ============================================================
-@app.route('/transcribe', methods=['POST'])
-def transcribe():
-    try:
-        if 'audio' not in request.files:
-            return jsonify({"success": False, "error": "没有找到音频文件"}), 400
-
-        audio_file = request.files['audio']
-        temp_path = "/tmp/temp_audio.wav"
-        audio_file.save(temp_path)
-
-        result = whisper_model.transcribe(temp_path, language="zh", fp16=False)
-        os.remove(temp_path)
-
-        return jsonify({"success": True, "text": result["text"]})
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
