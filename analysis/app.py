@@ -3,7 +3,8 @@ import re
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI
+import openai
+from faster_whisper import WhisperModel
 
 app = Flask(__name__)
 CORS(app)
@@ -14,15 +15,26 @@ DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 if not DEEPSEEK_API_KEY:
     print("⚠️ 警告: DEEPSEEK_API_KEY 环境变量未设置")
 
-client = OpenAI(
-    api_key=DEEPSEEK_API_KEY,
-    base_url=DEEPSEEK_BASE_URL
-)
+openai.api_key = DEEPSEEK_API_KEY
+openai.base_url = DEEPSEEK_BASE_URL
 
+# ============================================================
+# 加载 faster-whisper 语音识别模型（更轻量，兼容性更好）
+# ============================================================
+print("🔄 正在加载 faster-whisper 模型...")
+whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+print("✅ faster-whisper 模型加载完成！")
+
+# ============================================================
+# 路由：根路径
+# ============================================================
 @app.route('/')
 def index():
     return jsonify({"message": "智能体分析器 API 已启动", "status": "running"})
 
+# ============================================================
+# 路由：通用文本分析（7个字段）
+# ============================================================
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
@@ -45,7 +57,7 @@ def analyze():
 
 请只返回JSON，不要有其他内容。"""
 
-        response = client.chat.completions.create(
+        response = openai.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
@@ -62,6 +74,9 @@ def analyze():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# ============================================================
+# 路由：教学批改（英语作文四维分析）
+# ============================================================
 @app.route('/analyze/teaching', methods=['POST'])
 def analyze_teaching():
     try:
@@ -83,7 +98,7 @@ def analyze_teaching():
 
 请只返回JSON。"""
 
-        response = client.chat.completions.create(
+        response = openai.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
@@ -100,6 +115,31 @@ def analyze_teaching():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# ============================================================
+# 路由：faster-whisper 语音识别
+# ============================================================
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    try:
+        if 'audio' not in request.files:
+            return jsonify({"success": False, "error": "没有找到音频文件"}), 400
+
+        audio_file = request.files['audio']
+        temp_path = "/tmp/temp_audio.wav"
+        audio_file.save(temp_path)
+
+        segments, info = whisper_model.transcribe(temp_path, language="zh")
+        result_text = "".join([seg.text for seg in segments])
+        os.remove(temp_path)
+
+        return jsonify({"success": True, "text": result_text})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ============================================================
+# 启动
+# ============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
