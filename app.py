@@ -11,15 +11,6 @@ import io
 app = Flask(__name__)
 CORS(app)
 
-DEEPSEEK_API_KEY = os.environ.get('DEEPSEEK_API_KEY')
-DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-
-if not DEEPSEEK_API_KEY:
-    print("⚠️ 警告: DEEPSEEK_API_KEY 环境变量未设置")
-
-openai.api_key = DEEPSEEK_API_KEY
-openai.base_url = DEEPSEEK_BASE_URL
-
 # ============================================================
 # 路由：根路径
 # ============================================================
@@ -35,8 +26,17 @@ def analyze():
     try:
         data = request.json
         text = data.get('text', '')
+        api_key = data.get('api_key', '')
+        
         if not text:
             return jsonify({"success": False, "error": "请提供文本内容"}), 400
+        if not api_key:
+            return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
+
+        client = openai.OpenAI(
+            api_key=api_key,
+            base_url="https://api.deepseek.com/v1"
+        )
 
         prompt = f"""请对以下文本进行深度分析，输出JSON格式结果，包含以下7个字段：
 
@@ -52,7 +52,7 @@ def analyze():
 
 请只返回JSON，不要有其他内容。"""
 
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
@@ -77,8 +77,17 @@ def analyze_teaching():
     try:
         data = request.json
         text = data.get('text', '')
+        api_key = data.get('api_key', '')
+        
         if not text:
             return jsonify({"success": False, "error": "请提供作文内容"}), 400
+        if not api_key:
+            return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
+
+        client = openai.OpenAI(
+            api_key=api_key,
+            base_url="https://api.deepseek.com/v1"
+        )
 
         prompt = f"""请对以下英语作文进行批改，输出JSON格式，包含：
 
@@ -93,7 +102,7 @@ def analyze_teaching():
 
 请只返回JSON。"""
 
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
@@ -123,7 +132,6 @@ def import_students():
         if file.filename == '':
             return jsonify({"success": False, "error": "文件名为空"}), 400
         
-        # 获取请求参数：学校、专业、班级
         school = request.form.get('school', '')
         major = request.form.get('major', '')
         className = request.form.get('class', '')
@@ -131,15 +139,13 @@ def import_students():
         if not school or not major or not className:
             return jsonify({"success": False, "error": "缺少学校、专业或班级参数"}), 400
         
-        # 解析文件内容
         students = []
         filename = file.filename.lower()
         
         if filename.endswith('.xlsx') or filename.endswith('.xls'):
-            # 解析 Excel
             wb = openpyxl.load_workbook(io.BytesIO(file.read()))
             sheet = wb.active
-            for row in sheet.iter_rows(min_row=2, values_only=True):  # 跳过表头
+            for row in sheet.iter_rows(min_row=2, values_only=True):
                 if row and len(row) >= 2:
                     name = str(row[0]).strip() if row[0] else ''
                     student_id = str(row[1]).strip() if row[1] else ''
@@ -147,7 +153,6 @@ def import_students():
                         students.append({"name": name, "student_id": student_id})
         
         elif filename.endswith('.docx'):
-            # 解析 Word 文档
             doc = docx.Document(io.BytesIO(file.read()))
             text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
             lines = text.strip().split('\n')
@@ -171,40 +176,11 @@ def import_students():
         if not students:
             return jsonify({"success": False, "error": "未能解析到学生数据，请检查文件格式"}), 400
         
-        # 写入数据库（这里需要调用 data-utils.js 里的函数）
-        # 因为 app.py 不能直接调用前端函数，我们在这里直接操作 teacher_data
-        teacher_data = get_teacher_data()
-        if school not in teacher_data['schools']:
-            teacher_data['schools'][school] = {'majors': {}}
-        if major not in teacher_data['schools'][school]['majors']:
-            teacher_data['schools'][school]['majors'][major] = {'classes': {}}
-        if className not in teacher_data['schools'][school]['majors'][major]['classes']:
-            teacher_data['schools'][school]['majors'][major]['classes'][className] = {
-                'students': [],
-                'tasks': [],
-                'submissions': {}
-            }
-        
-        class_data = teacher_data['schools'][school]['majors'][major]['classes'][className]
-        if 'students' not in class_data:
-            class_data['students'] = []
-        
-        added_count = 0
-        for s in students:
-            if s['name'] not in class_data['students']:
-                class_data['students'].append(s['name'])
-                added_count += 1
-        
-        # 保存 teacher_data（这里需要从 localStorage 读取和写入，但后端没有 localStorage）
-        # 所以我们需要使用一个文件来存储，或者通过接口传入
-        # 由于我们的数据存储在前端 localStorage，后端直接操作文件不太合适
-        # 更合理的方式是：前端提交文件时，把当前的 teacher_data 一起传过来
-        
+        # 这里只返回解析结果，不实际写入（因为存储在前端 localStorage）
         return jsonify({
             "success": True,
-            "message": f"成功导入 {added_count} 名学生",
+            "message": f"成功解析 {len(students)} 名学生",
             "total": len(students),
-            "added": added_count,
             "students": students
         })
         
@@ -212,32 +188,9 @@ def import_students():
         return jsonify({"success": False, "error": str(e)}), 500
 
 # ============================================================
-# 辅助函数：获取 teacher_data（从本地文件读取）
-# ============================================================
-import json
-import os
-
-TEACHER_DATA_FILE = os.path.join(os.path.dirname(__file__), 'teacher_data.json')
-
-def get_teacher_data():
-    if os.path.exists(TEACHER_DATA_FILE):
-        with open(TEACHER_DATA_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    return {
-        'teacher_name': '张老师',
-        'current_school': '天津农学院',
-        'current_major': '英语专业',
-        'current_class': '英语2023-1班',
-        'schools': {}
-    }
-
-def save_teacher_data(data):
-    with open(TEACHER_DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-# ============================================================
 # 启动
 # ============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
     app.run(host='0.0.0.0', port=port)
