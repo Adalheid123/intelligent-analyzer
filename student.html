@@ -73,11 +73,23 @@
         .change-pwd-box .error{color:#ef4444;font-size:13px;margin-bottom:10px;}
         .change-pwd-box .btn{width:100%;}
         .change-pwd-box .close-btn{position:absolute;top:12px;right:16px;color:#94a3b8;cursor:pointer;font-size:20px;background:none;border:none;}
+        .login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:9999;}
+        .login-box{background:#1e293b;padding:40px;border-radius:20px;border:1px solid #334155;max-width:420px;width:90%;text-align:center;position:relative;}
+        .login-box h2{color:#f1f5f9;margin-bottom:8px;}
+        .login-box .sub{color:#94a3b8;font-size:14px;margin-bottom:20px;}
+        .login-box input{width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:16px;margin-bottom:12px;font-family:inherit;}
+        .login-box input:focus{outline:none;border-color:#3b82f6;}
+        .login-box .error{color:#ef4444;font-size:13px;margin-bottom:10px;}
+        .login-box .btn{width:100%;}
+        .login-box .close-btn{position:absolute;top:12px;right:16px;color:#94a3b8;cursor:pointer;font-size:20px;background:none;border:none;}
+        .input-wrapper{position:relative;margin-bottom:12px;}
+        .suggestions{position:absolute;top:100%;left:0;right:0;background:#0f172a;border:1px solid #334155;border-radius:10px;max-height:150px;overflow-y:auto;display:none;z-index:100;color:#e2e8f0;}
+        .suggestions div{padding:8px 14px;cursor:pointer;border-bottom:1px solid #1a2332;}
+        .suggestions div:hover{background:#1e293b;}
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- 顶部导航栏 -->
     <div class="top-bar">
         <div>
             <h1 style="font-size:18px;color:#f1f5f9;margin:0;">🧠 智能体分析器</h1>
@@ -95,11 +107,13 @@
         </div>
     </div>
 
-    <!-- 班级+学生信息 -->
     <div class="school-class-info" id="classInfo">
         <span>🏫</span>
         <span>学校：</span>
         <span id="displaySchool" style="color:#f1f5f9;font-weight:500;">加载中...</span>
+        <span style="margin-left:8px;">📚</span>
+        <span>专业：</span>
+        <span id="displayMajor" style="color:#f1f5f9;font-weight:500;">加载中...</span>
         <span style="margin-left:8px;">📚</span>
         <span>班级：</span>
         <span id="displayClass" style="color:#f1f5f9;font-weight:500;">加载中...</span>
@@ -113,7 +127,6 @@
 
     <div class="sub">📝 英语写作助手 · 学生端</div>
 
-    <!-- 任务列表 -->
     <div class="card">
         <div class="card-title">📋 我的任务</div>
         <div class="task-list" id="taskList">
@@ -121,7 +134,6 @@
         </div>
     </div>
 
-    <!-- 任务详情 + 作文提交 -->
     <div id="taskDetail" class="hidden">
         <div class="card">
             <div class="card-title">📌 题目要求</div>
@@ -138,7 +150,6 @@
         </div>
     </div>
 
-    <!-- 反馈结果 -->
     <div id="feedbackArea" class="hidden">
         <div class="card">
             <div class="card-title">📊 批改反馈</div>
@@ -179,7 +190,32 @@
     <div class="status" id="status">💡 选择一个任务开始写作</div>
 </div>
 
-<!-- 修改密码弹窗 -->
+<!-- ===== 登录弹窗 ===== -->
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+        <button class="close-btn" onclick="closeLogin()">✕</button>
+        <h2 id="loginTitle">🎓 学生端 · 身份验证</h2>
+        <div class="sub" id="loginSub">选择或输入学校、专业、班级，并输入密码</div>
+        <div class="input-wrapper">
+            <input id="loginSchool" type="text" placeholder="输入或选择学校..." oninput="filterSchoolOptions()" onfocus="filterSchoolOptions()" autocomplete="off">
+            <div id="schoolSuggestions" class="suggestions"></div>
+        </div>
+        <div class="input-wrapper">
+            <input id="loginMajor" type="text" placeholder="输入或选择专业..." oninput="filterMajorOptions()" onfocus="filterMajorOptions()" autocomplete="off">
+            <div id="majorSuggestions" class="suggestions"></div>
+        </div>
+        <div class="input-wrapper">
+            <input id="loginClass" type="text" placeholder="输入或选择班级..." oninput="filterClassOptions()" onfocus="filterClassOptions()" autocomplete="off">
+            <div id="classSuggestions" class="suggestions"></div>
+        </div>
+        <input id="loginApiKey" type="password" placeholder="DeepSeek API Key（sk-xxx...）" style="width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:14px;margin-bottom:12px;font-family:inherit;">
+        <input id="loginPassword" type="password" placeholder="请输入密码..." onkeydown="if(event.key==='Enter') confirmLogin()" style="margin-bottom:12px;">
+        <div id="loginError" class="error hidden">请完善所有信息</div>
+        <button class="btn btn-primary" onclick="confirmLogin()">确认</button>
+    </div>
+</div>
+
+<!-- ===== 修改密码弹窗 ===== -->
 <div id="changePwdOverlay" class="change-pwd-overlay">
     <div class="change-pwd-box">
         <button class="close-btn" onclick="closeChangePwd()">✕</button>
@@ -197,20 +233,14 @@
 <script src="data-utils.js"></script>
 <script>
 // ============================================================
-// 学生端 - 使用统一数据源
+// 学生端
 // ============================================================
 
-// ---------- 权限检查 ----------
-const savedUser = localStorage.getItem('currentUser');
-if (!savedUser) { window.location.href = 'index.html'; }
-const user = JSON.parse(savedUser);
-if (user.role === 'teacher') {
-    alert('❌ 教师身份无权访问学生端');
-    window.location.href = 'index.html';
-}
-const currentUser = user;
+const API_BASE = 'https://intelligent-analyzer-production-2265.up.railway.app';
 
-// ---------- 状态变量 ----------
+let currentUser = null;
+let currentSchool = '';
+let currentMajor = '';
 let currentClassName = '';
 let currentStudentName = localStorage.getItem('currentStudentName') || '';
 let tasks = [];
@@ -218,56 +248,231 @@ let currentTaskId = null;
 let latestFeedback = null;
 let originalText = '';
 
-// ---------- 初始化 ----------
+// ============================================================
+// 筛选函数（学校/专业/班级联想）
+// ============================================================
+function filterSchoolOptions() {
+    const input = document.getElementById('loginSchool');
+    const container = document.getElementById('schoolSuggestions');
+    const val = input.value.toLowerCase().trim();
+    const schools = getAllSchools();
+    let matched = val ? schools.filter(s => s.toLowerCase().includes(val)) : schools.slice(0, 20);
+    if (matched.length === 0) { container.style.display = 'none'; return; }
+    container.innerHTML = '';
+    matched.forEach(s => {
+        const div = document.createElement('div');
+        div.textContent = s;
+        div.onclick = function() {
+            input.value = s;
+            container.style.display = 'none';
+            document.getElementById('loginMajor').value = '';
+            document.getElementById('loginClass').value = '';
+            filterMajorOptions();
+        };
+        container.appendChild(div);
+    });
+    container.style.display = 'block';
+}
+
+function filterMajorOptions() {
+    const school = document.getElementById('loginSchool').value.trim();
+    const input = document.getElementById('loginMajor');
+    const container = document.getElementById('majorSuggestions');
+    const val = input.value.toLowerCase().trim();
+    if (!school) { container.style.display = 'none'; return; }
+    const majors = getMajorsBySchool(school);
+    let matched = val ? majors.filter(m => m.toLowerCase().includes(val)) : majors.slice(0, 20);
+    if (matched.length === 0) { container.style.display = 'none'; return; }
+    container.innerHTML = '';
+    matched.forEach(m => {
+        const div = document.createElement('div');
+        div.textContent = m;
+        div.onclick = function() {
+            input.value = m;
+            container.style.display = 'none';
+            document.getElementById('loginClass').value = '';
+            filterClassOptions();
+        };
+        container.appendChild(div);
+    });
+    container.style.display = 'block';
+}
+
+function filterClassOptions() {
+    const school = document.getElementById('loginSchool').value.trim();
+    const major = document.getElementById('loginMajor').value.trim();
+    const input = document.getElementById('loginClass');
+    const container = document.getElementById('classSuggestions');
+    const val = input.value.toLowerCase().trim();
+    if (!school || !major) { container.style.display = 'none'; return; }
+    const classes = getClassesByMajor(school, major);
+    let matched = val ? classes.filter(c => c.toLowerCase().includes(val)) : classes.slice(0, 20);
+    if (matched.length === 0) { container.style.display = 'none'; return; }
+    container.innerHTML = '';
+    matched.forEach(c => {
+        const div = document.createElement('div');
+        div.textContent = c;
+        div.onclick = function() {
+            input.value = c;
+            container.style.display = 'none';
+        };
+        container.appendChild(div);
+    });
+    container.style.display = 'block';
+}
+
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.suggestions').forEach(el => {
+        if (!el.contains(e.target) && !el.previousElementSibling.contains(e.target)) {
+            el.style.display = 'none';
+        }
+    });
+});
+
+// ============================================================
+// 登录相关
+// ============================================================
+function showLogin() {
+    const overlay = document.getElementById('loginOverlay');
+    overlay.style.display = 'flex';
+    document.getElementById('loginApiKey').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginError').classList.add('hidden');
+    document.getElementById('loginSchool').value = '';
+    document.getElementById('loginMajor').value = '';
+    document.getElementById('loginClass').value = '';
+    document.getElementById('schoolSuggestions').style.display = 'none';
+    document.getElementById('majorSuggestions').style.display = 'none';
+    document.getElementById('classSuggestions').style.display = 'none';
+    setTimeout(() => filterSchoolOptions(), 100);
+}
+
+function closeLogin() {
+    document.getElementById('loginOverlay').style.display = 'none';
+    document.getElementById('loginError').classList.add('hidden');
+}
+
+function confirmLogin() {
+    const school = document.getElementById('loginSchool').value.trim();
+    const major = document.getElementById('loginMajor').value.trim();
+    const className = document.getElementById('loginClass').value.trim();
+    const apiKey = document.getElementById('loginApiKey').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const error = document.getElementById('loginError');
+
+    if (!school) { error.textContent = '请输入或选择学校'; error.classList.remove('hidden'); return; }
+    if (!major) { error.textContent = '请输入或选择专业'; error.classList.remove('hidden'); return; }
+    if (!className) { error.textContent = '请输入或选择班级'; error.classList.remove('hidden'); return; }
+    if (!apiKey) { error.textContent = '请输入 DeepSeek API Key'; error.classList.remove('hidden'); return; }
+    if (!password) { error.textContent = '请输入密码'; error.classList.remove('hidden'); return; }
+
+    // 先检查管理员密码
+    if (password === getPassword('admin')) {
+        localStorage.setItem('deepseek_api_key', apiKey);
+        localStorage.setItem('currentSchool', school);
+        localStorage.setItem('currentMajor', major);
+        localStorage.setItem('currentClass', className);
+        currentUser = { role: 'admin', school: school, major: major, class: className };
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        closeLogin();
+        updateUserInfo();
+        init();
+        setStatus('✅ 管理员登录成功！', 'success');
+        return;
+    }
+
+    // 再检查学生密码
+    if (password === getPassword('student')) {
+        localStorage.setItem('deepseek_api_key', apiKey);
+        localStorage.setItem('currentSchool', school);
+        localStorage.setItem('currentMajor', major);
+        localStorage.setItem('currentClass', className);
+        currentUser = { role: 'student', school: school, major: major, class: className };
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        closeLogin();
+        updateUserInfo();
+        init();
+        setStatus('✅ 学生登录成功！', 'success');
+        return;
+    }
+
+    error.textContent = '密码错误，请重新输入';
+    error.classList.remove('hidden');
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('loginPassword').focus();
+}
+
+// ============================================================
+// 初始化
+// ============================================================
 function init() {
-    const teacherData = getTeacherData();
-    currentClassName = teacherData.current_class || Object.keys(teacherData.classes)[0] || '';
-    
-    // 如果学生名没选，取班级第一个学生
+    const saved = localStorage.getItem('currentUser');
+    if (!saved) {
+        showLogin();
+        return;
+    }
+    try {
+        const user = JSON.parse(saved);
+        if (user.role === 'guest' || !user.school || !user.class) {
+            showLogin();
+            return;
+        }
+        if (user.role !== 'student' && user.role !== 'admin' && user.role !== 'teacher') {
+            showLogin();
+            return;
+        }
+        currentUser = user;
+    } catch(e) {
+        showLogin();
+        return;
+    }
+
+    const { school, major, className } = getUserSchoolAndClass();
+    currentSchool = school || Object.keys(getTeacherData().schools)[0] || '';
+    currentMajor = major || '';
+    currentClassName = className || '';
+
     const students = getStudentNames(currentClassName);
     if (!currentStudentName && students.length > 0) {
         currentStudentName = students[0];
         localStorage.setItem('currentStudentName', currentStudentName);
     }
-    
+
     tasks = getTasks(currentClassName);
-    
+
     updateClassDisplay();
     updateUserInfo();
     renderTasks();
-    
+
     document.getElementById('essayInput').addEventListener('input', updateWordCount);
-    
+
     if (currentStudentName) {
         loadStudentData(currentStudentName);
     }
-    
+
     setStatus('💡 选择任务开始写作', '');
 }
 
-// ---------- 更新班级显示 ----------
 function updateClassDisplay() {
-    const classData = getClassData(currentClassName);
-    document.getElementById('displaySchool').textContent = classData.school || '未绑定';
-    document.getElementById('displayClass').textContent = currentClassName || '未绑定';
+    const { school, major, className } = getUserSchoolAndClass();
+    const classData = getClassData(className);
+    document.getElementById('displaySchool').textContent = school || '未绑定';
+    document.getElementById('displayMajor').textContent = major || '未绑定';
+    document.getElementById('displayClass').textContent = className || '未绑定';
     document.getElementById('displayTeacher').textContent = getTeacherData().teacher_name || '未绑定';
     document.getElementById('displayStudentName').textContent = currentStudentName || '选择学生';
 }
 
-// ---------- 学生选择器 ----------
 function showStudentSelector() {
     const students = getStudentNames(currentClassName);
     if (students.length === 0) {
         alert('当前班级暂无学生，请联系教师添加');
         return;
     }
-    // 用下拉列表形式选择
     const options = students.map((s, i) => `${i+1}. ${s}`).join('\n');
     const input = prompt('选择你的姓名（输入对应编号或姓名）:\n' + options, currentStudentName);
     if (!input) return;
-    
     let selectedName = input.trim();
-    // 尝试按编号匹配
     const match = selectedName.match(/^(\d+)\./);
     if (match) {
         const idx = parseInt(match[1]) - 1;
@@ -275,7 +480,6 @@ function showStudentSelector() {
             selectedName = students[idx];
         }
     }
-    // 精确匹配
     if (students.includes(selectedName)) {
         currentStudentName = selectedName;
         localStorage.setItem('currentStudentName', currentStudentName);
@@ -287,20 +491,16 @@ function showStudentSelector() {
     }
 }
 
-// ---------- 加载学生数据 ----------
 function loadStudentData(studentName) {
     const submissions = getSubmissions(currentClassName);
     const sub = submissions[studentName] || {};
-    
     if (tasks.length > 0) {
         const taskId = tasks[0].id;
         const savedEssay = localStorage.getItem('essay_' + taskId + '_' + studentName);
         document.getElementById('essayInput').value = savedEssay || sub.original || '';
         originalText = sub.original || '';
         updateWordCount();
-        
         if (sub.original) {
-            // 构造反馈对象
             latestFeedback = {
                 '语法准确性': { 评分: sub.aiScore || 0, 反馈: sub.aiFeedback || '' },
                 '词汇丰富度': { 评分: 0, 反馈: '' },
@@ -314,7 +514,6 @@ function loadStudentData(studentName) {
     }
 }
 
-// ---------- 渲染任务 ----------
 function renderTasks() {
     const container = document.getElementById('taskList');
     tasks = getTasks(currentClassName);
@@ -339,15 +538,12 @@ function renderTasks() {
     }
 }
 
-// ---------- 选择任务 ----------
 function selectTask(taskId) {
     currentTaskId = taskId;
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
-    
     document.getElementById('taskDetail').classList.remove('hidden');
     document.getElementById('taskRequirement').textContent = task.requirement;
-    
     const savedEssay = localStorage.getItem('essay_' + taskId + '_' + currentStudentName);
     document.getElementById('essayInput').value = savedEssay || '';
     originalText = savedEssay || '';
@@ -356,7 +552,6 @@ function selectTask(taskId) {
     loadFeedback(taskId);
 }
 
-// ---------- 加载反馈 ----------
 function loadFeedback(taskId) {
     const savedFeedback = localStorage.getItem('feedback_' + taskId + '_' + currentStudentName);
     if (savedFeedback) {
@@ -374,7 +569,6 @@ function loadFeedback(taskId) {
     }
 }
 
-// ---------- 显示反馈 ----------
 function displayFeedback(fb) {
     document.getElementById('feedbackArea').classList.remove('hidden');
     const dims = ['语法准确性', '词汇丰富度', '逻辑连贯性', '语用得体性'];
@@ -393,28 +587,34 @@ function displayFeedback(fb) {
     document.getElementById('compareAfter').textContent = revised || '（尚未提交修改版本）';
 }
 
-// ---------- 提交作文 ----------
 async function submitEssay() {
     const text = document.getElementById('essayInput').value.trim();
     if (!text) { setStatus('⚠️ 请先输入作文内容', 'error'); return; }
     if (!currentTaskId) { setStatus('⚠️ 请先选择一个任务', 'error'); return; }
     if (!currentStudentName) { setStatus('⚠️ 请先选择学生姓名', 'error'); return; }
-    
+
+    const apiKey = localStorage.getItem('deepseek_api_key');
+    if (!apiKey) {
+        setStatus('⚠️ 请先登录并输入 DeepSeek API Key', 'error');
+        showLogin();
+        return;
+    }
+
     localStorage.setItem('essay_' + currentTaskId + '_' + currentStudentName, text);
     setStatus('⏳ 正在批改中...', 'loading');
-    
     try {
-        const res = await fetch('http://127.0.0.1:5000/analyze/teaching', {
+        const res = await fetch(API_BASE + '/analyze/teaching', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text })
+            body: JSON.stringify({
+                text: text,
+                api_key: apiKey
+            })
         });
         const data = await res.json();
         if (data.success) {
             const result = data.result;
             latestFeedback = result;
-            
-            // 保存到统一数据源
             const submissionData = {
                 original: text,
                 revised: localStorage.getItem('revised_' + currentTaskId + '_' + currentStudentName) || '',
@@ -422,42 +622,34 @@ async function submitEssay() {
                 aiFeedback: result.整体评语 || '',
                 teacherComment: ''
             };
-            syncStudentSubmission(currentClassName, currentStudentName, submissionData);
-            
+            syncStudentSubmission(currentSchool, currentMajor, currentClassName, currentStudentName, submissionData);
             localStorage.setItem('feedback_' + currentTaskId + '_' + currentStudentName, JSON.stringify(result));
             localStorage.setItem('original_' + currentTaskId + '_' + currentStudentName, text);
             originalText = text;
-            
             displayFeedback(result);
             setStatus('✅ 批改完成！已同步到教师端', 'success');
         } else {
             setStatus('❌ ' + (data.error || '批改失败'), 'error');
         }
     } catch(e) {
-        setStatus('❌ 网络错误: ' + e.message + '（请确认本地API服务已启动）', 'error');
+        setStatus('❌ 网络错误: ' + e.message + '（请确认后端API服务已启动）', 'error');
     }
 }
 
-// ---------- 提交修改版本 ----------
 function submitRevised() {
     const text = document.getElementById('essayInput').value.trim();
     if (!text) { setStatus('⚠️ 请先输入修改后的内容', 'error'); return; }
     if (!currentTaskId) { setStatus('⚠️ 请先选择一个任务', 'error'); return; }
     if (!currentStudentName) { setStatus('⚠️ 请先选择学生姓名', 'error'); return; }
-    
     localStorage.setItem('revised_' + currentTaskId + '_' + currentStudentName, text);
     document.getElementById('compareAfter').textContent = text;
-    
-    // 更新到统一数据源
     const submissions = getSubmissions(currentClassName);
     const sub = submissions[currentStudentName] || {};
     sub.revised = text;
-    syncStudentSubmission(currentClassName, currentStudentName, sub);
-    
+    syncStudentSubmission(currentSchool, currentMajor, currentClassName, currentStudentName, sub);
     setStatus('✅ 修改版本已保存，已同步到教师端', 'success');
 }
 
-// ---------- 辅助函数 ----------
 function updateWordCount() {
     const text = document.getElementById('essayInput').value;
     document.getElementById('wordCount').textContent = '字数: ' + text.replace(/\s/g, '').length;
@@ -477,7 +669,6 @@ function setStatus(msg, type) {
     el.innerHTML = '<span class="' + cls + '">' + msg + '</span>';
 }
 
-// ---------- 用户信息 ----------
 function updateUserInfo() {
     const el = document.getElementById('userInfo');
     if (!el) return;
@@ -497,10 +688,13 @@ function updateUserInfo() {
 function logout() {
     if (!confirm('确认退出登录？')) return;
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('deepseek_api_key');
+    localStorage.removeItem('currentSchool');
+    localStorage.removeItem('currentMajor');
+    localStorage.removeItem('currentClass');
     window.location.href = 'index.html';
 }
 
-// ---------- 修改密码 ----------
 function showChangePwd() {
     if (!currentUser) { alert('请先登录'); return; }
     document.getElementById('changePwdOverlay').style.display = 'flex';
@@ -539,7 +733,9 @@ function confirmChangePwd() {
     setTimeout(() => { closeChangePwd(); alert('密码已修改，请重新登录'); logout(); }, 1500);
 }
 
-// ---------- 启动 ----------
+// ============================================================
+// 启动
+// ============================================================
 init();
 </script>
 </body>
