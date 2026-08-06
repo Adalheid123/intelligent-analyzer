@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能体分析器 · 教学版</title>
+    <title>智能体分析器 · 通用分析</title>
     <style>
         *{box-sizing:border-box;margin:0;padding:0;}
         body{font-family:system-ui,sans-serif;background:#0f172a;min-height:100vh;padding:20px;display:flex;justify-content:center;align-items:flex-start;}
@@ -60,7 +60,7 @@
         .login-box{background:#1e293b;padding:40px;border-radius:20px;border:1px solid #334155;max-width:400px;width:90%;text-align:center;position:relative;}
         .login-box h2{color:#f1f5f9;margin-bottom:8px;}
         .login-box .sub{color:#94a3b8;font-size:14px;margin-bottom:20px;}
-        .login-box input{width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:16px;margin-bottom:12px;}
+        .login-box input{width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:16px;margin-bottom:12px;font-family:inherit;}
         .login-box input:focus{outline:none;border-color:#3b82f6;}
         .login-box .error{color:#ef4444;font-size:13px;margin-bottom:10px;}
         .login-box .btn{width:100%;}
@@ -74,9 +74,6 @@
         .change-pwd-box .error{color:#ef4444;font-size:13px;margin-bottom:10px;}
         .change-pwd-box .btn{width:100%;}
         .change-pwd-box .close-btn{position:absolute;top:12px;right:16px;color:#94a3b8;cursor:pointer;font-size:20px;background:none;border:none;}
-        .school-class-info{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:10px 16px;background:#0f172a;border-radius:10px;border:1px solid #334155;}
-        .school-class-info .label{color:#94a3b8;font-size:13px;}
-        .school-class-info .value{color:#f1f5f9;font-size:13px;font-weight:500;}
         .qa-area{margin-top:16px;padding:16px 20px;background:#0f172a;border-radius:12px;border:1px solid #334155;}
         .qa-area .qa-title{color:#94a3b8;font-weight:600;font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
         .qa-area .qa-history{color:#e2e8f0;font-size:14px;line-height:1.9;min-height:60px;max-height:200px;overflow-y:auto;white-space:pre-wrap;margin-bottom:8px;padding:8px 12px;background:#0f172a;border-radius:8px;border:1px solid #1a2332;}
@@ -106,14 +103,13 @@
 </head>
 <body>
 <div class="container">
-    <!-- ===== 顶部导航栏 ===== -->
     <div class="top-bar">
         <div>
             <div class="h1">🧠 智能体分析器</div>
             <div style="font-size:12px;color:#94a3b8;" id="roleDisplay">通用分析 · 多场景</div>
         </div>
         <div class="nav">
-            <button class="btn btn-primary btn-sm" onclick="goTo('general')">📊 通用分析</button>
+            <button class="btn btn-primary btn-sm" onclick="window.location.href='index.html'">📊 通用分析</button>
             <button class="btn btn-outline btn-sm" id="navStudent" onclick="goTo('student')">📝 学生端</button>
             <button class="btn btn-outline btn-sm" id="navTeacher" onclick="goTo('teacher')">📚 教师端</button>
             <button class="btn btn-danger btn-sm hidden" id="logoutBtn" onclick="logout()">退出登录</button>
@@ -124,23 +120,8 @@
         </div>
     </div>
 
-    <!-- ===== 班级信息 ===== -->
-    <div class="school-class-info" id="schoolClassInfo">
-        <span class="label">🏫</span>
-        <span class="label">学校：</span>
-        <span class="value" id="displaySchool">加载中...</span>
-        <span class="label" style="margin-left:8px;">📚</span>
-        <span class="label">班级：</span>
-        <span class="value" id="displayClass">加载中...</span>
-        <span class="label" style="margin-left:8px;">👨‍🏫</span>
-        <span class="label">教师：</span>
-        <span class="value" id="displayTeacher">加载中...</span>
-        <span style="margin-left:auto;font-size:12px;color:#64748b;" id="classActionBtn"></span>
-    </div>
+    <div class="sub">输入文本 → 标准化分析 · 只需输入 API Key</div>
 
-    <div class="sub">输入文本 → 标准化分析 · 身份隔离 · 班级适配</div>
-
-    <!-- ===== 输入区域 ===== -->
     <div id="generalInputArea">
         <div class="upload-area" id="uploadArea">
             <span style="font-size:30px;display:block;margin-bottom:4px;">📄</span>
@@ -183,7 +164,6 @@
         </div>
     </div>
 
-    <!-- ===== 标准化分析结果 ===== -->
     <div id="actionButtons" style="margin-top:16px;">
         <hr style="border:none;border-top:1px solid #334155;margin:16px 0;">
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;">
@@ -195,7 +175,6 @@
         </div>
     </div>
 
-    <!-- ===== 自由问答区域 ===== -->
     <div class="qa-area">
         <div class="qa-title">💬 自由问答</div>
         <div class="qa-history" id="qaHistory">
@@ -211,15 +190,15 @@
     <div class="status" id="status">💡 开始使用</div>
 </div>
 
-<!-- ===== 登录弹窗 ===== -->
+<!-- ===== 登录弹窗 - 只输入 API Key ===== -->
 <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
         <button class="close-btn" onclick="closeLogin()">✕</button>
-        <h2 id="loginTitle">🔐 身份验证</h2>
-        <div class="sub" id="loginSub">请输入对应身份的密码</div>
-        <input id="loginPassword" type="password" placeholder="请输入密码..." onkeydown="if(event.key==='Enter') confirmLogin()">
-        <div id="loginError" class="error hidden">密码错误，请重新输入</div>
-        <button class="btn btn-primary" onclick="confirmLogin()">确认</button>
+        <h2>🔐 通用分析 · 身份验证</h2>
+        <div class="sub">请输入你的 DeepSeek API Key 即可开始分析</div>
+        <input id="loginApiKey" type="password" placeholder="DeepSeek API Key（sk-xxx...）" style="width:100%;padding:12px 16px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:16px;margin-bottom:12px;font-family:inherit;">
+        <div id="loginError" class="error hidden">请输入 DeepSeek API Key</div>
+        <button class="btn btn-primary" onclick="confirmLogin()">开始分析</button>
     </div>
 </div>
 
@@ -243,65 +222,38 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script>
 // ============================================================
-// 通用分析 - 使用统一数据源（data-utils.js）
+// 通用分析 - 独立使用，只需要 API Key
 // ============================================================
 
-const API_BASE = 'http://127.0.0.1:5000';
+const API_BASE = 'https://intelligent-analyzer-production-2265.up.railway.app';
+
 let uploadedText = '';
 let fileName = '直接输入';
 let batchResults = [];
 let isBatchRunning = false;
-let currentUser = null;
+let isLoggedIn = false;
 let chatHistory = [];
 
 // ============================================================
-// 登录相关（使用 data-utils.js 中的密码函数）
+// 导航切换 - 直接跳转
 // ============================================================
 function goTo(target) {
     if (target === 'general') {
         window.location.href = 'index.html';
         return;
     }
-    if (!currentUser) {
-        showLogin(target);
-        return;
-    }
-    if (currentUser.role === 'admin') {
-        window.location.href = target + '.html';
-        return;
-    }
-    if (target === 'teacher' && currentUser.role === 'student') {
-        alert('❌ 学生身份无权访问教师端');
-        return;
-    }
-    if (target === 'student' && currentUser.role === 'teacher') {
-        alert('❌ 教师身份无权访问学生端');
-        return;
-    }
-    if (currentUser.role === target) {
-        window.location.href = target + '.html';
-        return;
-    }
-    showLogin(target);
+    window.location.href = target + '.html';
 }
 
-function showLogin(role) {
+// ============================================================
+// 登录相关 - 只输入 API Key
+// ============================================================
+function showLogin() {
     const overlay = document.getElementById('loginOverlay');
-    const title = document.getElementById('loginTitle');
-    const sub = document.getElementById('loginSub');
-    const error = document.getElementById('loginError');
     overlay.style.display = 'flex';
-    error.classList.add('hidden');
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('loginPassword').focus();
-    if (role === 'student') {
-        title.textContent = '🎓 学生端验证';
-        sub.textContent = '请输入学生身份密码';
-    } else if (role === 'teacher') {
-        title.textContent = '👨‍🏫 教师端验证';
-        sub.textContent = '请输入教师身份密码';
-    }
-    window._loginTarget = role;
+    document.getElementById('loginApiKey').value = '';
+    document.getElementById('loginError').classList.add('hidden');
+    document.getElementById('loginApiKey').focus();
 }
 
 function closeLogin() {
@@ -310,77 +262,46 @@ function closeLogin() {
 }
 
 function confirmLogin() {
-    const password = document.getElementById('loginPassword').value.trim();
-    const role = window._loginTarget;
-    const error = document.getElementById('loginError');
-    if (!password) {
-        error.textContent = '请输入密码';
-        error.classList.remove('hidden');
+    const apiKey = document.getElementById('loginApiKey').value.trim();
+    if (!apiKey) {
+        document.getElementById('loginError').textContent = '请输入 DeepSeek API Key';
+        document.getElementById('loginError').classList.remove('hidden');
         return;
     }
-    if (password === getPassword('admin')) {
-        currentUser = { role: 'admin' };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        error.classList.add('hidden');
-        closeLogin();
-        if (role === 'student') window.location.href = 'student.html';
-        else if (role === 'teacher') window.location.href = 'teacher.html';
-        else window.location.href = 'index.html';
-        return;
-    }
-    if (password === getPassword(role)) {
-        currentUser = { role: role };
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        error.classList.add('hidden');
-        closeLogin();
-        window.location.href = role + '.html';
-    } else {
-        error.textContent = '密码错误，请重新输入';
-        error.classList.remove('hidden');
-        document.getElementById('loginPassword').value = '';
-        document.getElementById('loginPassword').focus();
-    }
+    localStorage.setItem('deepseek_api_key', apiKey);
+    localStorage.setItem('currentUser', JSON.stringify({ role: 'guest' }));
+    isLoggedIn = true;
+    closeLogin();
+    updateUI();
+    setStatus('✅ 已登录，可以开始分析了', 'success');
 }
 
 function checkLoginStatus() {
-    const saved = localStorage.getItem('currentUser');
-    if (saved) {
-        try {
-            currentUser = JSON.parse(saved);
-            updateUI(currentUser.role);
-        } catch(e) { currentUser = null; }
+    const apiKey = localStorage.getItem('deepseek_api_key');
+    if (apiKey) {
+        isLoggedIn = true;
+        updateUI();
+    } else {
+        setTimeout(() => showLogin(), 300);
     }
-    updateClassDisplay();
 }
 
-function updateUI(role) {
+function updateUI() {
     const userInfo = document.getElementById('userInfo');
     const logoutBtn = document.getElementById('logoutBtn');
     const changePwdBtn = document.getElementById('changePwdBtn');
+    const roleDisplay = document.getElementById('roleDisplay');
     const studentBtn = document.getElementById('navStudent');
     const teacherBtn = document.getElementById('navTeacher');
-    const roleDisplay = document.getElementById('roleDisplay');
-    
+
     if (studentBtn) { studentBtn.disabled = false; studentBtn.style.opacity = '1'; studentBtn.style.cursor = 'pointer'; }
     if (teacherBtn) { teacherBtn.disabled = false; teacherBtn.style.opacity = '1'; teacherBtn.style.cursor = 'pointer'; }
-    
-    if (role === 'student') {
-        userInfo.innerHTML = '<span class="role-badge" style="background:#22c55e;color:#0f172a;">🎓 学生</span>';
+
+    if (isLoggedIn) {
+        userInfo.innerHTML = '<span class="role-badge" style="background:#22c55e;color:#0f172a;">👤 访客</span>';
         logoutBtn.classList.remove('hidden');
         changePwdBtn.classList.remove('hidden');
-        if (roleDisplay) roleDisplay.textContent = '🎓 学生 · 通用分析';
-        if (teacherBtn) { teacherBtn.disabled = true; teacherBtn.style.opacity = '0.5'; teacherBtn.style.cursor = 'not-allowed'; }
-    } else if (role === 'teacher') {
-        userInfo.innerHTML = '<span class="role-badge" style="background:#3b82f6;color:white;">👨‍🏫 教师</span>';
-        logoutBtn.classList.remove('hidden');
-        changePwdBtn.classList.remove('hidden');
-        if (roleDisplay) roleDisplay.textContent = '👨‍🏫 教师 · 通用分析';
-        if (studentBtn) { studentBtn.disabled = true; studentBtn.style.opacity = '0.5'; studentBtn.style.cursor = 'not-allowed'; }
-    } else if (role === 'admin') {
-        userInfo.innerHTML = '<span class="role-badge" style="background:#8b5cf6;color:white;">👑 管理员</span>';
-        logoutBtn.classList.remove('hidden');
-        changePwdBtn.classList.remove('hidden');
-        if (roleDisplay) roleDisplay.textContent = '👑 管理员 · 全端口';
+        if (roleDisplay) roleDisplay.textContent = '通用分析 · 已登录';
     } else {
         userInfo.innerHTML = '<span style="color:#64748b;">未登录</span>';
         logoutBtn.classList.add('hidden');
@@ -391,72 +312,15 @@ function updateUI(role) {
 
 function logout() {
     if (!confirm('确认退出登录？')) return;
-    currentUser = null;
+    localStorage.removeItem('deepseek_api_key');
     localStorage.removeItem('currentUser');
-    updateUI(null);
+    isLoggedIn = false;
+    updateUI();
     window.location.href = 'index.html';
 }
 
-function updateClassDisplay() {
-    const saved = localStorage.getItem('currentUser');
-    const schoolEl = document.getElementById('displaySchool');
-    const classEl = document.getElementById('displayClass');
-    const teacherEl = document.getElementById('displayTeacher');
-    const actionBtn = document.getElementById('classActionBtn');
-    
-    if (!saved) {
-        schoolEl.textContent = '未登录';
-        classEl.textContent = '未登录';
-        teacherEl.textContent = '未登录';
-        actionBtn.textContent = '';
-        return;
-    }
-    const user = JSON.parse(saved);
-    
-    if (user.role === 'teacher') {
-        const teacherData = getTeacherData();
-        const className = teacherData.current_class || Object.keys(teacherData.classes || {})[0] || '未绑定';
-        const classData = (teacherData.classes || {})[className] || {};
-        schoolEl.textContent = classData.school || '未绑定';
-        classEl.textContent = className;
-        teacherEl.textContent = teacherData.teacher_name || '未绑定';
-        actionBtn.textContent = '📌 教师：' + Object.keys(teacherData.classes || {}).length + '个班级';
-    } else if (user.role === 'student') {
-        const teacherData = getTeacherData();
-        const className = teacherData.current_class || Object.keys(teacherData.classes || {})[0] || '未绑定';
-        const classData = (teacherData.classes || {})[className] || {};
-        schoolEl.textContent = classData.school || '未绑定';
-        classEl.textContent = className;
-        teacherEl.textContent = teacherData.teacher_name || '未绑定';
-        actionBtn.textContent = '📌 学生端';
-    } else if (user.role === 'admin') {
-        const teacherData = getTeacherData();
-        const classCount = Object.keys(teacherData.classes || {}).length;
-        schoolEl.textContent = '管理员';
-        classEl.textContent = classCount > 0 ? '共 ' + classCount + ' 个班级' : '暂无班级';
-        teacherEl.textContent = teacherData.teacher_name || '系统管理员';
-        actionBtn.textContent = '👑 管理员全通';
-    } else {
-        schoolEl.textContent = '未登录';
-        classEl.textContent = '未登录';
-        teacherEl.textContent = '未登录';
-        actionBtn.textContent = '';
-    }
-}
-
-// ============================================================
-// 修改密码（使用 data-utils.js）
-// ============================================================
 function showChangePwd() {
-    if (!currentUser) { alert('请先登录'); return; }
-    document.getElementById('changePwdOverlay').style.display = 'flex';
-    document.getElementById('oldPwdInput').value = '';
-    document.getElementById('newPwdInput').value = '';
-    document.getElementById('confirmPwdInput').value = '';
-    document.getElementById('changePwdError').classList.add('hidden');
-    document.getElementById('changePwdSuccess').classList.add('hidden');
-    const roleMap = { 'student': '学生', 'teacher': '教师', 'admin': '管理员' };
-    document.getElementById('changePwdSub').textContent = '修改「' + (roleMap[currentUser.role] || '未知') + '」身份密码';
+    alert('访客模式下无需修改密码。');
 }
 
 function closeChangePwd() {
@@ -464,25 +328,7 @@ function closeChangePwd() {
 }
 
 function confirmChangePwd() {
-    const oldPwd = document.getElementById('oldPwdInput').value.trim();
-    const newPwd = document.getElementById('newPwdInput').value.trim();
-    const confirmPwd = document.getElementById('confirmPwdInput').value.trim();
-    const error = document.getElementById('changePwdError');
-    const success = document.getElementById('changePwdSuccess');
-    error.classList.add('hidden');
-    success.classList.add('hidden');
-    if (!oldPwd) { error.textContent = '请输入旧密码'; error.classList.remove('hidden'); return; }
-    if (!newPwd || newPwd.length < 4) { error.textContent = '新密码长度至少4位'; error.classList.remove('hidden'); return; }
-    if (newPwd !== confirmPwd) { error.textContent = '两次输入的新密码不一致'; error.classList.remove('hidden'); return; }
-    const currentPwd = getPassword(currentUser.role);
-    if (oldPwd !== currentPwd) { error.textContent = '旧密码错误'; error.classList.remove('hidden'); return; }
-    setPassword(currentUser.role, newPwd);
-    success.textContent = '✅ 密码修改成功！';
-    success.classList.remove('hidden');
-    document.getElementById('oldPwdInput').value = '';
-    document.getElementById('newPwdInput').value = '';
-    document.getElementById('confirmPwdInput').value = '';
-    setTimeout(() => { closeChangePwd(); alert('密码已修改，请重新登录'); logout(); }, 1500);
+    alert('访客模式下无需修改密码。');
 }
 
 // ============================================================
@@ -514,7 +360,7 @@ function startVoiceInput() {
     voiceManualStop = false;
     let hasResult = false;
     if (voiceRestartTimer) { clearTimeout(voiceRestartTimer); voiceRestartTimer = null; }
-    
+
     recognition.onstart = function() {
         isListening = true;
         document.getElementById('micBtn').classList.add('listening');
@@ -526,7 +372,7 @@ function startVoiceInput() {
         document.getElementById('textInput').placeholder = '🎤 正在倾听...';
         hasResult = false;
     };
-    
+
     recognition.onresult = function(event) {
         let currentFinal = '', currentInterim = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -541,7 +387,7 @@ function startVoiceInput() {
             document.getElementById('textInput').scrollTop = document.getElementById('textInput').scrollHeight;
         }
     };
-    
+
     recognition.onerror = function(event) {
         if (event.error === 'no-speech' || event.error === 'aborted') return;
         let msg = '❌ 识别错误';
@@ -551,7 +397,7 @@ function startVoiceInput() {
         setStatus(msg, 'error');
         stopVoiceInput();
     };
-    
+
     recognition.onend = function() {
         if (voiceManualStop || hasResult || voiceFinalText.trim()) {
             const currentText = document.getElementById('textInput').value.trim();
@@ -699,12 +545,23 @@ function clearFile() {
 // ============================================================
 async function callAI(messages, actionName) {
     if (!uploadedText) { setStatus('⚠️ 请先加载文本', 'error'); return null; }
+
+    const apiKey = localStorage.getItem('deepseek_api_key');
+    if (!apiKey) {
+        setStatus('⚠️ 请先输入 DeepSeek API Key', 'error');
+        showLogin();
+        return null;
+    }
+
     setStatus('⏳ ' + actionName + '...', 'loading');
     try {
         const res = await fetch(API_BASE + '/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: uploadedText })
+            body: JSON.stringify({
+                text: uploadedText,
+                api_key: apiKey
+            })
         });
         const data = await res.json();
         if (data.success) {
@@ -715,7 +572,7 @@ async function callAI(messages, actionName) {
             return null;
         }
     } catch (e) {
-        setStatus('❌ 网络错误: ' + e.message + '（请确认本地API服务已启动）', 'error');
+        setStatus('❌ 网络错误: ' + e.message + '（请确认后端API服务已启动）', 'error');
         return null;
     }
 }
@@ -895,15 +752,22 @@ async function askQuestion() {
     const question = document.getElementById('questionInput').value.trim();
     if (!question) { setStatus('⚠️ 请输入问题', 'error'); return; }
     if (!uploadedText) { setStatus('⚠️ 请先加载文本（上传或粘贴文本后点击分析）', 'error'); return; }
-    
+
+    const apiKey = localStorage.getItem('deepseek_api_key');
+    if (!apiKey) {
+        setStatus('⚠️ 请先输入 DeepSeek API Key', 'error');
+        showLogin();
+        return;
+    }
+
     addChatMessage('user', question);
     document.getElementById('questionInput').value = '';
-    
+
     const messages = [
         { role: 'system', content: '你是专业助手。基于已加载的文本内容回答用户的问题。回答要准确、简洁，基于文本内容。如果问题与文本无关，请礼貌地说明。' },
         { role: 'user', content: `文件内容：\n${uploadedText.slice(0, 8000)}${uploadedText.length > 8000 ? '\n... (截断)' : ''}\n\n用户问题：${question}` }
     ];
-    
+
     const result = await callAI(messages, '回答');
     if (result) {
         let answer = result;
