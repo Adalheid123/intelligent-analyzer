@@ -2,8 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 安装系统依赖（av 库需要 pkg-config 和 ffmpeg）
+# 安装系统依赖（包括 gcc 编译器和 ffmpeg）
 RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
     pkg-config \
     ffmpeg \
     libavformat-dev \
