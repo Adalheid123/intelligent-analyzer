@@ -5,3 +5,4 @@ python-dotenv==1.0.0
 gunicorn==21.2.0
 openai-whisper==20231117
 setuptools==70.0.0
+wheel==0.42.0
