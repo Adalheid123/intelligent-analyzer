@@ -4,6 +4,7 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
+import whisper
 
 app = Flask(__name__)
 CORS(app)
@@ -17,10 +18,23 @@ if not DEEPSEEK_API_KEY:
 openai.api_key = DEEPSEEK_API_KEY
 openai.base_url = DEEPSEEK_BASE_URL
 
+# ============================================================
+# 加载 Whisper 语音识别模型
+# ============================================================
+print("🔄 正在下载并加载 Whisper 模型（约 1.5GB，首次启动需要 3-5 分钟）...")
+whisper_model = whisper.load_model("base")
+print("✅ Whisper 模型加载完成！")
+
+# ============================================================
+# 路由：根路径
+# ============================================================
 @app.route('/')
 def index():
     return jsonify({"message": "智能体分析器 API 已启动", "status": "running"})
 
+# ============================================================
+# 路由：通用文本分析（7个字段）
+# ============================================================
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
@@ -60,6 +74,9 @@ def analyze():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# ============================================================
+# 路由：教学批改（英语作文四维分析）
+# ============================================================
 @app.route('/analyze/teaching', methods=['POST'])
 def analyze_teaching():
     try:
@@ -98,6 +115,30 @@ def analyze_teaching():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# ============================================================
+# 路由：Whisper 语音识别
+# ============================================================
+@app.route('/transcribe', methods=['POST'])
+def transcribe():
+    try:
+        if 'audio' not in request.files:
+            return jsonify({"success": False, "error": "没有找到音频文件"}), 400
+
+        audio_file = request.files['audio']
+        temp_path = "/tmp/temp_audio.wav"
+        audio_file.save(temp_path)
+
+        result = whisper_model.transcribe(temp_path, language="zh", fp16=False)
+        os.remove(temp_path)
+
+        return jsonify({"success": True, "text": result["text"]})
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# ============================================================
+# 启动
+# ============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
