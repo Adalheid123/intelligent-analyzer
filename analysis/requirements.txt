@@ -1,5 +1,5 @@
-echo Flask==2.3.3 > requirements.txt
-echo Flask-CORS==4.0.0 >> requirements.txt
-echo openai==1.6.1 >> requirements.txt
-echo python-dotenv==1.0.0 >> requirements.txt
-echo gunicorn==21.2.0 >> requirements.txt
+Flask==2.3.3
+Flask-CORS==4.0.0
+openai==1.6.1
+python-dotenv==1.0.0
+gunicorn==21.2.0
