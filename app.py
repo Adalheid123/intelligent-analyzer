@@ -3,7 +3,7 @@ import re
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import openai
+from openai import OpenAI
 import openpyxl
 import docx
 import io
@@ -33,7 +33,7 @@ def analyze():
         if not api_key:
             return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
 
-        client = openai.OpenAI(
+        client = OpenAI(
             api_key=api_key,
             base_url="https://api.deepseek.com/v1"
         )
@@ -84,7 +84,7 @@ def analyze_teaching():
         if not api_key:
             return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
 
-        client = openai.OpenAI(
+        client = OpenAI(
             api_key=api_key,
             base_url="https://api.deepseek.com/v1"
         )
@@ -176,7 +176,6 @@ def import_students():
         if not students:
             return jsonify({"success": False, "error": "未能解析到学生数据，请检查文件格式"}), 400
         
-        # 这里只返回解析结果，不实际写入（因为存储在前端 localStorage）
         return jsonify({
             "success": True,
             "message": f"成功解析 {len(students)} 名学生",
@@ -192,5 +191,4 @@ def import_students():
 # ============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
     app.run(host='0.0.0.0', port=port)
