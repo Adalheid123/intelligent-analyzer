@@ -4,7 +4,7 @@ import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from openai import OpenAI
-import openpyxl
+import openai
 import docx
 import io
 
