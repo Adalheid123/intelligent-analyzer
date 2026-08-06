@@ -3,7 +3,7 @@ import re
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI
+import openai
 
 app = Flask(__name__)
 CORS(app)
@@ -14,10 +14,8 @@ DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
 if not DEEPSEEK_API_KEY:
     print("⚠️ 警告: DEEPSEEK_API_KEY 环境变量未设置")
 
-client = OpenAI(
-    api_key=DEEPSEEK_API_KEY,
-    base_url=DEEPSEEK_BASE_URL
-)
+openai.api_key = DEEPSEEK_API_KEY
+openai.base_url = DEEPSEEK_BASE_URL
 
 @app.route('/')
 def index():
@@ -45,7 +43,7 @@ def analyze():
 
 请只返回JSON，不要有其他内容。"""
 
-        response = client.chat.completions.create(
+        response = openai.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
@@ -83,7 +81,7 @@ def analyze_teaching():
 
 请只返回JSON。"""
 
-        response = client.chat.completions.create(
+        response = openai.chat.completions.create(
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
