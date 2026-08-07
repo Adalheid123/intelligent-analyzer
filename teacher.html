@@ -58,7 +58,7 @@
         .class-selector select{padding:8px 14px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;font-size:14px;min-width:180px;}
         .class-selector select:focus{outline:none;border-color:#3b82f6;}
         .manage-students-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center;z-index:9999;}
-        .manage-students-box{background:#1e293b;padding:40px;border-radius:20px;border:1px solid #334155;max-width:450px;width:90%;text-align:center;position:relative;}
+        .manage-students-box{background:#1e293b;padding:40px;border-radius:20px;border:1px solid #334155;max-width:500px;width:90%;text-align:center;position:relative;}
         .manage-students-box h2{color:#f1f5f9;margin-bottom:8px;}
         .manage-students-box .sub{color:#94a3b8;font-size:14px;margin-bottom:12px;}
         .manage-students-box .student-list{max-height:250px;overflow-y:auto;text-align:left;}
@@ -66,6 +66,9 @@
         .manage-students-box .student-item .name{color:#e2e8f0;font-size:14px;}
         .manage-students-box .student-item .del-btn{padding:4px 12px;border:none;border-radius:6px;font-weight:600;font-size:12px;cursor:pointer;background:#ef4444;color:white;}
         .manage-students-box .close-btn{position:absolute;top:12px;right:16px;color:#94a3b8;cursor:pointer;font-size:20px;background:none;border:none;}
+        .manage-students-box .import-area{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;justify-content:center;}
+        .manage-students-box .import-area .file-label{color:#94a3b8;font-size:12px;}
+        .manage-students-box .import-area .import-status{font-size:12px;}
         .submission-wrapper{margin-top:10px;}
         .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .detail-card{background:#0f172a;border-radius:8px;padding:12px;border:1px solid #1a2332;}
@@ -227,6 +230,15 @@
         <button class="close-btn" onclick="document.getElementById('manageStudentsOverlay').style.display='none'">✕</button>
         <h2>👥 管理学生</h2>
         <div class="sub">当前班级：<span id="manageClassName" style="color:#f1f5f9;"></span></div>
+
+        <!-- 导入学生名单 -->
+        <div class="import-area">
+            <input type="file" id="importFileInput" accept=".xlsx,.xls,.docx" style="display:none;" onchange="importStudents()">
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('importFileInput').click()">📥 导入学生名单</button>
+            <span class="file-label">支持 .xlsx .xls .docx</span>
+            <span id="importStatus" class="import-status"></span>
+        </div>
+
         <div style="display:flex;gap:8px;margin-bottom:12px;">
             <input id="newStudentName" type="text" placeholder="输入学生姓名" style="flex:1;padding:10px 14px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:10px;font-size:14px;">
             <button onclick="addStudent()" style="padding:10px 20px;border:none;border-radius:10px;font-weight:600;font-size:14px;cursor:pointer;background:#22c55e;color:white;">添加</button>
@@ -480,6 +492,49 @@ function updateUserInfo() {
 }
 
 // ============================================================
+// 导入学生名单
+// ============================================================
+async function importStudents() {
+    const fileInput = document.getElementById('importFileInput');
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const statusEl = document.getElementById('importStatus');
+    statusEl.textContent = '⏳ 正在导入...';
+    statusEl.style.color = '#fbbf24';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('school', currentSchool);
+    formData.append('major', currentMajor);
+    formData.append('class', currentClassName);
+
+    try {
+        const res = await fetch(API_BASE + '/import_students', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            statusEl.textContent = '✅ ' + data.message;
+            statusEl.style.color = '#34d399';
+            renderStudentList();
+            renderClassSelector();
+            updateStudentCount();
+        } else {
+            statusEl.textContent = '❌ ' + data.error;
+            statusEl.style.color = '#ef4444';
+        }
+    } catch (e) {
+        statusEl.textContent = '❌ 网络错误: ' + e.message;
+        statusEl.style.color = '#ef4444';
+    }
+
+    fileInput.value = '';
+}
+
+// ============================================================
 // 初始化
 // ============================================================
 function init() {
@@ -583,6 +638,8 @@ function showManageStudents() {
     document.getElementById('manageStudentsOverlay').style.display = 'flex';
     document.getElementById('newStudentName').value = '';
     document.getElementById('manageClassName').textContent = currentClassName;
+    document.getElementById('importStatus').textContent = '';
+    document.getElementById('importFileInput').value = '';
     renderStudentList();
 }
 
