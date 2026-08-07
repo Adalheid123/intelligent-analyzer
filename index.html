@@ -764,8 +764,14 @@ async function askQuestion() {
     document.getElementById('questionInput').value = '';
 
     const messages = [
-        { role: 'system', content: '你是专业助手。基于已加载的文本内容回答用户的问题。回答要准确、简洁，基于文本内容。如果问题与文本无关，请礼貌地说明。' },
-        { role: 'user', content: `文件内容：\n${uploadedText.slice(0, 8000)}${uploadedText.length > 8000 ? '\n... (截断)' : ''}\n\n用户问题：${question}` }
+        {
+            role: 'system',
+            content: '你是专业助手。用户提供了一段文本，请根据这段文本的内容回答用户的问题。如果用户问的是"主要内容"或"核心观点"，请用简洁的语言总结，不要复述分析框架或输出格式。回答要准确、基于文本内容，不要编造。'
+        },
+        {
+            role: 'user',
+            content: `文件内容：\n${uploadedText.slice(0, 8000)}${uploadedText.length > 8000 ? '\n... (截断)' : ''}\n\n用户问题：${question}`
+        }
     ];
 
     const result = await callAI(messages, '回答');
