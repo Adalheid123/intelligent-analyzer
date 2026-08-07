@@ -93,14 +93,14 @@
     <div class="top-bar">
         <div>
             <h1 style="font-size:18px;color:#f1f5f9;margin:0;">🧠 智能体分析器</h1>
-            <div style="font-size:12px;color:#94a3b8;">三端 · 班级隔离</div>
+            <div style="font-size:12px;color:#94a3b8;" id="roleDisplay">三端 · 班级隔离</div>
         </div>
         <div class="nav">
-            <button class="btn btn-primary btn-sm" onclick="window.location.href='index.html'">📊 通用分析</button>
-            <button class="btn btn-outline btn-sm" onclick="window.location.href='student.html'">📝 学生端</button>
-            <button class="btn btn-outline btn-sm" onclick="window.location.href='teacher.html'">📚 教师端</button>
-            <button class="btn btn-danger btn-sm" onclick="logout()">退出登录</button>
-            <button class="btn btn-warning btn-sm" onclick="showChangePwd()">🔑 修改密码</button>
+            <button class="btn btn-primary btn-sm" onclick="goTo('general')">📊 通用分析</button>
+            <button class="btn btn-outline btn-sm" id="navStudent" onclick="goTo('student')">📝 学生端</button>
+            <button class="btn btn-outline btn-sm" id="navTeacher" onclick="goTo('teacher')">📚 教师端</button>
+            <button class="btn btn-danger btn-sm hidden" id="logoutBtn" onclick="logout()">退出登录</button>
+            <button class="btn btn-warning btn-sm hidden" id="changePwdBtn" onclick="showChangePwd()">🔑 修改密码</button>
         </div>
         <div class="user-info" id="userInfo">
             <span style="color:#64748b;">未登录</span>
@@ -403,6 +403,79 @@ function confirmLogin() {
 }
 
 // ============================================================
+// 导航切换 - 权限控制
+// ============================================================
+function goTo(target) {
+    if (target === 'general') {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    const savedUser = localStorage.getItem('currentUser');
+    if (!savedUser) {
+        alert('请先登录');
+        return;
+    }
+    const user = JSON.parse(savedUser);
+
+    if (target === 'teacher' && user.role !== 'admin') {
+        alert('⚠️ 学生身份无权访问教师端');
+        return;
+    }
+    if (target === 'student' && user.role === 'teacher') {
+        alert('⚠️ 教师身份无权访问学生端');
+        return;
+    }
+
+    window.location.href = target + '.html';
+}
+
+// ============================================================
+// 更新 UI - 控制按钮状态
+// ============================================================
+function updateUserInfo() {
+    const userInfo = document.getElementById('userInfo');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const changePwdBtn = document.getElementById('changePwdBtn');
+    const roleDisplay = document.getElementById('roleDisplay');
+    const studentBtn = document.getElementById('navStudent');
+    const teacherBtn = document.getElementById('navTeacher');
+
+    const savedUser = localStorage.getItem('currentUser');
+    if (!savedUser) {
+        userInfo.innerHTML = '<span style="color:#64748b;">未登录</span>';
+        if (logoutBtn) logoutBtn.classList.add('hidden');
+        if (changePwdBtn) changePwdBtn.classList.add('hidden');
+        if (roleDisplay) roleDisplay.textContent = '三端 · 班级隔离';
+        if (studentBtn) { studentBtn.disabled = false; studentBtn.style.opacity = '1'; studentBtn.style.cursor = 'pointer'; }
+        if (teacherBtn) { teacherBtn.disabled = false; teacherBtn.style.opacity = '1'; teacherBtn.style.cursor = 'pointer'; }
+        return;
+    }
+
+    const user = JSON.parse(savedUser);
+    const role = user.role;
+
+    const map = { 'student': '🎓 学生', 'teacher': '👨‍🏫 教师', 'admin': '👑 管理员' };
+    const colors = { 'student': '#22c55e', 'teacher': '#3b82f6', 'admin': '#8b5cf6' };
+    userInfo.innerHTML = `<span class="role-badge" style="background:${colors[role]};color:white;">${map[role] || '未知'}</span>`;
+
+    if (logoutBtn) logoutBtn.classList.remove('hidden');
+    if (changePwdBtn) changePwdBtn.classList.remove('hidden');
+    if (roleDisplay) roleDisplay.textContent = map[role] + ' · 班级隔离';
+
+    if (role === 'student') {
+        if (teacherBtn) { teacherBtn.disabled = true; teacherBtn.style.opacity = '0.5'; teacherBtn.style.cursor = 'not-allowed'; }
+        if (studentBtn) { studentBtn.disabled = false; studentBtn.style.opacity = '1'; studentBtn.style.cursor = 'pointer'; }
+    } else if (role === 'teacher') {
+        if (studentBtn) { studentBtn.disabled = true; studentBtn.style.opacity = '0.5'; studentBtn.style.cursor = 'not-allowed'; }
+        if (teacherBtn) { teacherBtn.disabled = false; teacherBtn.style.opacity = '1'; teacherBtn.style.cursor = 'pointer'; }
+    } else if (role === 'admin') {
+        if (studentBtn) { studentBtn.disabled = false; studentBtn.style.opacity = '1'; studentBtn.style.cursor = 'pointer'; }
+        if (teacherBtn) { teacherBtn.disabled = false; teacherBtn.style.opacity = '1'; teacherBtn.style.cursor = 'pointer'; }
+    }
+}
+
+// ============================================================
 // 初始化
 // ============================================================
 function init() {
@@ -453,6 +526,7 @@ function init() {
     setStatus('💡 选择任务开始写作', '');
 }
 
+// 以下是原有的业务函数（保持不变）
 function updateClassDisplay() {
     const { school, major, className } = getUserSchoolAndClass();
     const classData = getClassData(className);
@@ -669,22 +743,6 @@ function setStatus(msg, type) {
     el.innerHTML = '<span class="' + cls + '">' + msg + '</span>';
 }
 
-function updateUserInfo() {
-    const el = document.getElementById('userInfo');
-    if (!el) return;
-    const saved = localStorage.getItem('currentUser');
-    if (saved) {
-        try {
-            const u = JSON.parse(saved);
-            const map = { 'student': '🎓 学生', 'teacher': '👨‍🏫 教师', 'admin': '👑 管理员' };
-            const colors = { 'student': '#22c55e', 'teacher': '#3b82f6', 'admin': '#8b5cf6' };
-            el.innerHTML = `<span class="role-badge" style="background:${colors[u.role]};color:white;">${map[u.role] || '未知'}</span>`;
-        } catch(e) { el.innerHTML = '<span style="color:#64748b;">未登录</span>'; }
-    } else {
-        el.innerHTML = '<span style="color:#64748b;">未登录</span>';
-    }
-}
-
 function logout() {
     if (!confirm('确认退出登录？')) return;
     localStorage.removeItem('currentUser');
@@ -733,9 +791,7 @@ function confirmChangePwd() {
     setTimeout(() => { closeChangePwd(); alert('密码已修改，请重新登录'); logout(); }, 1500);
 }
 
-// ============================================================
 // 启动
-// ============================================================
 init();
 </script>
 </body>
