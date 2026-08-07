@@ -3,7 +3,7 @@ import re
 import json
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from openai import OpenAI
+import openai
 import openpyxl
 import docx
 import io
@@ -11,32 +11,40 @@ import io
 app = Flask(__name__)
 CORS(app)
 
-# ============================================================
-# 路由：根路径
-# ============================================================
 @app.route('/')
 def index():
     return jsonify({"message": "智能体分析器 API 已启动", "status": "running"})
 
-# ============================================================
-# 路由：通用文本分析（7个字段）
-# ============================================================
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
         data = request.json
         text = data.get('text', '')
         api_key = data.get('api_key', '')
+        is_chat = data.get('is_chat', False)
+        messages = data.get('messages', [])
         
-        if not text:
-            return jsonify({"success": False, "error": "请提供文本内容"}), 400
         if not api_key:
             return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
 
-        client = OpenAI(
+        client = openai.OpenAI(
             api_key=api_key,
             base_url="https://api.deepseek.com/v1"
         )
+
+        # ===== 自由问答模式 =====
+        if is_chat and messages:
+            response = client.chat.completions.create(
+                model="deepseek-chat",
+                messages=messages,
+                temperature=0.7
+            )
+            result_text = response.choices[0].message.content
+            return jsonify({"success": True, "result": result_text})
+
+        # ===== 标准化分析模式（七个字段） =====
+        if not text:
+            return jsonify({"success": False, "error": "请提供文本内容"}), 400
 
         prompt = f"""请对以下文本进行深度分析，输出JSON格式结果，包含以下7个字段：
 
@@ -69,9 +77,6 @@ def analyze():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# ============================================================
-# 路由：教学批改（英语作文四维分析）
-# ============================================================
 @app.route('/analyze/teaching', methods=['POST'])
 def analyze_teaching():
     try:
@@ -84,7 +89,7 @@ def analyze_teaching():
         if not api_key:
             return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
 
-        client = OpenAI(
+        client = openai.OpenAI(
             api_key=api_key,
             base_url="https://api.deepseek.com/v1"
         )
@@ -119,29 +124,21 @@ def analyze_teaching():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# ============================================================
-# 路由：导入学生名单（支持 Excel 和 Word）
-# ============================================================
 @app.route('/import_students', methods=['POST'])
 def import_students():
     try:
         if 'file' not in request.files:
             return jsonify({"success": False, "error": "没有上传文件"}), 400
-        
         file = request.files['file']
         if file.filename == '':
             return jsonify({"success": False, "error": "文件名为空"}), 400
-        
         school = request.form.get('school', '')
         major = request.form.get('major', '')
         className = request.form.get('class', '')
-        
         if not school or not major or not className:
             return jsonify({"success": False, "error": "缺少学校、专业或班级参数"}), 400
-        
         students = []
         filename = file.filename.lower()
-        
         if filename.endswith('.xlsx') or filename.endswith('.xls'):
             wb = openpyxl.load_workbook(io.BytesIO(file.read()))
             sheet = wb.active
@@ -151,7 +148,6 @@ def import_students():
                     student_id = str(row[1]).strip() if row[1] else ''
                     if name and name != 'None':
                         students.append({"name": name, "student_id": student_id})
-        
         elif filename.endswith('.docx'):
             doc = docx.Document(io.BytesIO(file.read()))
             text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
@@ -169,26 +165,19 @@ def import_students():
                 elif len(parts) == 1:
                     if parts[0].strip():
                         students.append({"name": parts[0].strip(), "student_id": ""})
-        
         else:
             return jsonify({"success": False, "error": "不支持的文件格式，请上传 .xlsx .xls .docx"}), 400
-        
         if not students:
             return jsonify({"success": False, "error": "未能解析到学生数据，请检查文件格式"}), 400
-        
         return jsonify({
             "success": True,
             "message": f"成功解析 {len(students)} 名学生",
             "total": len(students),
             "students": students
         })
-        
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# ============================================================
-# 启动
-# ============================================================
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
