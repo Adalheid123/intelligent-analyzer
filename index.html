@@ -98,10 +98,25 @@
         .batch-summary .stat{color:#94a3b8;font-size:13px;}
         .batch-summary .stat .num{color:#f1f5f9;font-weight:600;}
         .file-info{color:#94a3b8;font-size:13px;padding:6px 12px;background:#0f172a;border-radius:8px;display:inline-block;}
+        /* 语速仪表盘 - 国标分级 */
+        .speed-gauge{display:none;flex-direction:column;align-items:center;padding:16px 20px 20px 20px;margin-top:8px;background:#0f172a;border-radius:16px;border:1px solid #334155;position:relative;}
+        .speed-gauge.active{display:flex;}
+        .speed-gauge canvas{width:100%;max-width:280px;height:auto;aspect-ratio:1/1;display:block;}
+        .speed-gauge .gauge-label{color:#94a3b8;font-size:13px;margin-top:-8px;letter-spacing:1px;}
+        .speed-gauge .gauge-value{color:#f1f5f9;font-size:22px;font-weight:700;margin-top:4px;}
+        .speed-gauge .gauge-value span{font-size:14px;font-weight:400;color:#64748b;}
+        .speed-gauge .gauge-status{font-size:14px;font-weight:500;margin-top:2px;}
+        .speed-gauge .gauge-status.slow{color:#60a5fa;}
+        .speed-gauge .gauge-status.moderate{color:#34d399;}
+        .speed-gauge .gauge-status.fast{color:#fbbf24;}
+        .speed-gauge .gauge-status.very-fast{color:#f87171;}
         .speech-stats{display:flex;gap:20px;flex-wrap:wrap;padding:10px 14px;background:#0f172a;border-radius:8px;border:1px solid #334155;margin-top:8px;}
         .speech-stats .stat-item{display:flex;align-items:center;gap:6px;font-size:13px;color:#94a3b8;}
         .speech-stats .stat-item .num{color:#f1f5f9;font-weight:600;font-size:16px;}
         .speech-stats .stat-item .label{color:#64748b;}
+        .gauge-legend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px;}
+        .gauge-legend .legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#94a3b8;}
+        .gauge-legend .legend-item .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
         @media(max-width:768px){.card-grid{grid-template-columns:1fr;}.login-box{padding:24px;}.change-pwd-box{padding:24px;}.speech-stats{flex-direction:column;gap:8px;}}
     </style>
 </head>
@@ -171,7 +186,19 @@
             <span class="stat-item">📝 字数：<span class="num" id="speechWordCount">0</span></span>
             <span class="stat-item">⏱️ 时长：<span class="num" id="speechDuration">0</span><span class="label">秒</span></span>
             <span class="stat-item">📊 语速：<span class="num" id="speechSpeed">0</span><span class="label">字/分钟</span></span>
-            <span class="stat-item" id="speechQuality" style="color:#fbbf24;"></span>
+        </div>
+        <!-- 语速仪表盘 - 国标分级 -->
+        <div id="speedGauge" class="speed-gauge">
+            <canvas id="gaugeCanvas" width="400" height="400"></canvas>
+            <div class="gauge-label">语速（字/分钟）</div>
+            <div class="gauge-value" id="gaugeValue">0 <span>字/分钟</span></div>
+            <div class="gauge-status" id="gaugeStatus">等待说话...</div>
+            <div class="gauge-legend">
+                <span class="legend-item"><span class="dot" style="background:#60a5fa;"></span>偏慢</span>
+                <span class="legend-item"><span class="dot" style="background:#34d399;"></span>正常</span>
+                <span class="legend-item"><span class="dot" style="background:#fbbf24;"></span>偏快</span>
+                <span class="legend-item"><span class="dot" style="background:#f87171;"></span>很快</span>
+            </div>
         </div>
     </div>
 
@@ -343,7 +370,7 @@ function confirmChangePwd() {
 }
 
 // ============================================================
-// 语音识别 + 语速统计
+// 语音识别 + 语速统计 + 仪表盘（国标分级）
 // ============================================================
 let recognition = null;
 let isListening = false;
@@ -352,6 +379,142 @@ let voiceRestartTimer = null;
 let voiceManualStop = false;
 let speechStartTime = null;
 let speechEndTime = null;
+
+// ----- 国标语速分级 -----
+// 偏慢: 0-80, 正常: 80-160, 偏快: 160-220, 很快: 220+
+// 仪表盘色区对应: 蓝(0-80) 绿(80-160) 黄(160-220) 红(220-300)
+const SPEED_ZONES = [
+    { label: '偏慢', max: 80, color: '#60a5fa', endAngle: 0.15 },
+    { label: '正常', max: 160, color: '#34d399', endAngle: 0.45 },
+    { label: '偏快', max: 220, color: '#fbbf24', endAngle: 0.75 },
+    { label: '很快', max: 300, color: '#f87171', endAngle: 1.0 }
+];
+
+function getSpeedStatus(speed) {
+    if (speed < 80) return { text: '🐢 偏慢，建议适当加快', cls: 'slow' };
+    if (speed < 160) return { text: '✅ 正常，表达流畅', cls: 'moderate' };
+    if (speed < 220) return { text: '⚡ 偏快，注意清晰度', cls: 'fast' };
+    return { text: '🔥 很快，适合快速表达', cls: 'very-fast' };
+}
+
+function drawGauge(speed) {
+    const canvas = document.getElementById('gaugeCanvas');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = 150;
+
+    ctx.clearRect(0, 0, w, h);
+
+    const startAngle = 0.75 * Math.PI;
+    const endAngle = 2.25 * Math.PI;
+    const totalAngle = endAngle - startAngle;
+
+    let currentEnd = 0;
+    SPEED_ZONES.forEach(zone => {
+        const frac = zone.endAngle;
+        const a1 = startAngle + currentEnd * totalAngle;
+        const a2 = startAngle + frac * totalAngle;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, a1, a2);
+        ctx.strokeStyle = zone.color;
+        ctx.lineWidth = 28;
+        ctx.lineCap = 'butt';
+        ctx.stroke();
+        currentEnd = frac;
+    });
+
+    // 刻度线
+    for (let i = 0; i <= 20; i++) {
+        const frac = i / 20;
+        const angle = startAngle + frac * totalAngle;
+        const inner = radius - 18;
+        const outer = radius - 6;
+        ctx.beginPath();
+        ctx.moveTo(cx + inner * Math.cos(angle), cy + inner * Math.sin(angle));
+        ctx.lineTo(cx + outer * Math.cos(angle), cy + outer * Math.sin(angle));
+        ctx.strokeStyle = i % 5 === 0 ? '#94a3b8' : '#475569';
+        ctx.lineWidth = i % 5 === 0 ? 2.5 : 1.5;
+        ctx.stroke();
+    }
+
+    // 刻度标签（0, 80, 160, 220, 300）
+    const labels = [
+        { val: 0, frac: 0 },
+        { val: 80, frac: 0.15 },
+        { val: 160, frac: 0.45 },
+        { val: 220, frac: 0.75 },
+        { val: 300, frac: 1.0 }
+    ];
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    labels.forEach(l => {
+        const angle = startAngle + l.frac * totalAngle;
+        const r = radius + 22;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        ctx.fillText(l.val, x, y);
+    });
+
+    // 中心装饰圈
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28);
+    grad.addColorStop(0, '#1e293b');
+    grad.addColorStop(1, '#0f172a');
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 指针
+    const clampedSpeed = Math.min(Math.max(speed, 0), 300);
+    const frac = clampedSpeed / 300;
+    const angle = startAngle + frac * totalAngle;
+    const len = radius - 12;
+    const tipX = cx + len * Math.cos(angle);
+    const tipY = cy + len * Math.sin(angle);
+    const baseLen = 18;
+
+    ctx.shadowColor = 'rgba(255,255,255,0.1)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(cx + baseLen * Math.cos(angle - 0.1), cy + baseLen * Math.sin(angle - 0.1));
+    ctx.lineTo(tipX, tipY);
+    ctx.lineTo(cx + baseLen * Math.cos(angle + 0.1), cy + baseLen * Math.sin(angle + 0.1));
+    ctx.closePath();
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
+    ctx.fillStyle = '#3b82f6';
+    ctx.fill();
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+function updateGauge(speed) {
+    const container = document.getElementById('speedGauge');
+    const valueEl = document.getElementById('gaugeValue');
+    const statusEl = document.getElementById('gaugeStatus');
+
+    container.classList.add('active');
+    drawGauge(speed);
+
+    valueEl.innerHTML = `${speed} <span>字/分钟</span>`;
+
+    const status = getSpeedStatus(speed);
+    statusEl.textContent = status.text;
+    statusEl.className = 'gauge-status ' + status.cls;
+}
 
 function toggleVoiceInput() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -375,8 +538,7 @@ function startVoiceInput() {
     speechStartTime = Date.now();
     if (voiceRestartTimer) { clearTimeout(voiceRestartTimer); voiceRestartTimer = null; }
     
-    // 隐藏之前的统计结果
-    document.getElementById('speechStats').classList.add('hidden');
+    document.getElementById('speedGauge').classList.remove('active');
 
     recognition.onstart = function() {
         isListening = true;
@@ -457,33 +619,22 @@ function finishVoiceRecognition(text) {
     speechEndTime = Date.now();
     const durationSeconds = (speechEndTime - speechStartTime) / 1000;
     
-    // 字数统计（去除空格）
     const cleanText = text.replace(/\s/g, '');
     const wordCount = cleanText.length;
     
-    // 语速计算（字/分钟）
     let speed = 0;
-    let quality = '';
     if (durationSeconds > 0) {
         speed = Math.round(wordCount / (durationSeconds / 60));
-        // 语速评价
-        if (speed < 60) {
-            quality = '🐢 语速偏慢，可以适当加快';
-        } else if (speed >= 60 && speed < 120) {
-            quality = '✅ 语速适中，表达流畅';
-        } else if (speed >= 120 && speed < 180) {
-            quality = '⚡ 语速偏快，注意清晰度';
-        } else if (speed >= 180) {
-            quality = '🔥 语速很快，适合快速表达';
-        }
     }
     
-    // 显示统计结果
+    // 更新统计数字
     document.getElementById('speechWordCount').textContent = wordCount;
     document.getElementById('speechDuration').textContent = durationSeconds.toFixed(1);
     document.getElementById('speechSpeed').textContent = speed;
-    document.getElementById('speechQuality').textContent = quality;
     document.getElementById('speechStats').classList.remove('hidden');
+    
+    // 更新仪表盘
+    updateGauge(speed);
     
     document.getElementById('textInput').value = text.trim();
     document.getElementById('micStatus').textContent = '✅ 已识别 (' + detectedLang + ')';
@@ -506,28 +657,22 @@ function stopVoiceInput() {
     document.getElementById('micBtn').textContent = '🎙️';
     document.getElementById('realTimeIndicator').classList.add('hidden');
     if (document.getElementById('textInput').value.trim()) {
-        document.getElementById('micStatus').textContent = '✅ 已识别';
-        document.getElementById('micStatus').className = 'mic-status active';
-        // 触发统计
         const text = document.getElementById('textInput').value.trim();
         speechEndTime = Date.now();
         const durationSeconds = (speechEndTime - speechStartTime) / 1000;
         const cleanText = text.replace(/\s/g, '');
         const wordCount = cleanText.length;
         let speed = 0;
-        let quality = '';
         if (durationSeconds > 0) {
             speed = Math.round(wordCount / (durationSeconds / 60));
-            if (speed < 60) quality = '🐢 语速偏慢，可以适当加快';
-            else if (speed >= 60 && speed < 120) quality = '✅ 语速适中，表达流畅';
-            else if (speed >= 120 && speed < 180) quality = '⚡ 语速偏快，注意清晰度';
-            else if (speed >= 180) quality = '🔥 语速很快，适合快速表达';
         }
         document.getElementById('speechWordCount').textContent = wordCount;
         document.getElementById('speechDuration').textContent = durationSeconds.toFixed(1);
         document.getElementById('speechSpeed').textContent = speed;
-        document.getElementById('speechQuality').textContent = quality;
         document.getElementById('speechStats').classList.remove('hidden');
+        updateGauge(speed);
+        document.getElementById('micStatus').textContent = '✅ 已识别';
+        document.getElementById('micStatus').className = 'mic-status active';
         setStatus('✅ 语音识别完成，字数 ' + wordCount + '，用时 ' + durationSeconds.toFixed(1) + ' 秒，语速 ' + speed + ' 字/分钟', 'success');
         setTimeout(() => { analyzeTextInput(); }, 200);
     } else {
@@ -731,6 +876,7 @@ function clearTextInput() {
         uploadedText = '';
         resultArea.classList.add('hidden');
         document.getElementById('speechStats').classList.add('hidden');
+        document.getElementById('speedGauge').classList.remove('active');
     }
     setStatus('💡 已清空', '');
 }
