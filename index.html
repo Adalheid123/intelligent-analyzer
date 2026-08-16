@@ -98,26 +98,98 @@
         .batch-summary .stat{color:#94a3b8;font-size:13px;}
         .batch-summary .stat .num{color:#f1f5f9;font-weight:600;}
         .file-info{color:#94a3b8;font-size:13px;padding:6px 12px;background:#0f172a;border-radius:8px;display:inline-block;}
-        /* 语速仪表盘 - 国标分级 */
-        .speed-gauge{display:none;flex-direction:column;align-items:center;padding:16px 20px 20px 20px;margin-top:8px;background:#0f172a;border-radius:16px;border:1px solid #334155;position:relative;}
-        .speed-gauge.active{display:flex;}
-        .speed-gauge canvas{width:100%;max-width:280px;height:auto;aspect-ratio:1/1;display:block;}
-        .speed-gauge .gauge-label{color:#94a3b8;font-size:13px;margin-top:-8px;letter-spacing:1px;}
-        .speed-gauge .gauge-value{color:#f1f5f9;font-size:22px;font-weight:700;margin-top:4px;}
-        .speed-gauge .gauge-value span{font-size:14px;font-weight:400;color:#64748b;}
-        .speed-gauge .gauge-status{font-size:14px;font-weight:500;margin-top:2px;}
-        .speed-gauge .gauge-status.slow{color:#60a5fa;}
-        .speed-gauge .gauge-status.moderate{color:#34d399;}
-        .speed-gauge .gauge-status.fast{color:#fbbf24;}
-        .speed-gauge .gauge-status.very-fast{color:#f87171;}
-        .speech-stats{display:flex;gap:20px;flex-wrap:wrap;padding:10px 14px;background:#0f172a;border-radius:8px;border:1px solid #334155;margin-top:8px;}
-        .speech-stats .stat-item{display:flex;align-items:center;gap:6px;font-size:13px;color:#94a3b8;}
-        .speech-stats .stat-item .num{color:#f1f5f9;font-weight:600;font-size:16px;}
-        .speech-stats .stat-item .label{color:#64748b;}
-        .gauge-legend{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:4px;}
-        .gauge-legend .legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#94a3b8;}
-        .gauge-legend .legend-item .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
-        @media(max-width:768px){.card-grid{grid-template-columns:1fr;}.login-box{padding:24px;}.change-pwd-box{padding:24px;}.speech-stats{flex-direction:column;gap:8px;}}
+
+        /* ===== 实时语速表（双表盘） ===== */
+        .speed-dashboard {
+            display: none;
+            gap: 24px;
+            padding: 20px;
+            margin-top: 8px;
+            background: #0f172a;
+            border-radius: 16px;
+            border: 1px solid #334155;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        .speed-dashboard.active {
+            display: flex;
+        }
+        .speed-gauge-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            min-width: 180px;
+        }
+        .speed-gauge-wrap canvas {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            aspect-ratio: 1/1;
+            display: block;
+        }
+        .speed-gauge-wrap .label {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+        .speed-gauge-wrap .value {
+            color: #f1f5f9;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .speed-gauge-wrap .value span {
+            font-size: 13px;
+            font-weight: 400;
+            color: #64748b;
+        }
+        .speed-gauge-wrap .status {
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        .speed-gauge-wrap .status.slow { color: #60a5fa; }
+        .speed-gauge-wrap .status.moderate { color: #34d399; }
+        .speed-gauge-wrap .status.fast { color: #fbbf24; }
+        .speed-gauge-wrap .status.very-fast { color: #f87171; }
+
+        .speed-info {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 12px 20px;
+            background: #0f172a;
+            border-radius: 12px;
+            border: 1px solid #1a2332;
+            min-width: 140px;
+        }
+        .speed-info .item {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .speed-info .item .num {
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+        .speed-info .lang-tag {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            background: #1e293b;
+            color: #94a3b8;
+        }
+        .speed-info .lang-tag.zh { background: #1a2744; color: #60a5fa; }
+        .speed-info .lang-tag.en { background: #1a2a1a; color: #34d399; }
+        .speed-info .lang-tag.mix { background: #2a1a2a; color: #a78bfa; }
+
+        @media(max-width:768px){.card-grid{grid-template-columns:1fr;}.login-box{padding:24px;}.change-pwd-box{padding:24px;}.speed-dashboard{flex-direction:column;gap:16px;}}
     </style>
 </head>
 <body>
@@ -139,7 +211,7 @@
         </div>
     </div>
 
-    <div class="sub">输入文本 → 标准化分析 · 只需输入 API Key</div>
+    <div class="sub">输入文本 → 标准化分析 · 语音输入实时语速表</div>
 
     <div id="generalInputArea">
         <div class="upload-area" id="uploadArea">
@@ -181,23 +253,22 @@
             </div>
             <div style="font-size:12px;color:#64748b;margin-top:-4px;margin-bottom:8px;">💡 说完了点击🎙️停止并自动分析</div>
         </div>
-        <!-- 语速统计结果 -->
-        <div id="speechStats" class="speech-stats hidden">
-            <span class="stat-item">📝 字数：<span class="num" id="speechWordCount">0</span></span>
-            <span class="stat-item">⏱️ 时长：<span class="num" id="speechDuration">0</span><span class="label">秒</span></span>
-            <span class="stat-item">📊 语速：<span class="num" id="speechSpeed">0</span><span class="label">字/分钟</span></span>
-        </div>
-        <!-- 语速仪表盘 - 国标分级 -->
-        <div id="speedGauge" class="speed-gauge">
-            <canvas id="gaugeCanvas" width="400" height="400"></canvas>
-            <div class="gauge-label">语速（字/分钟）</div>
-            <div class="gauge-value" id="gaugeValue">0 <span>字/分钟</span></div>
-            <div class="gauge-status" id="gaugeStatus">等待说话...</div>
-            <div class="gauge-legend">
-                <span class="legend-item"><span class="dot" style="background:#60a5fa;"></span>偏慢</span>
-                <span class="legend-item"><span class="dot" style="background:#34d399;"></span>正常</span>
-                <span class="legend-item"><span class="dot" style="background:#fbbf24;"></span>偏快</span>
-                <span class="legend-item"><span class="dot" style="background:#f87171;"></span>很快</span>
+
+        <!-- 实时语速表 -->
+        <div id="speedDashboard" class="speed-dashboard">
+            <!-- 左侧：仪表盘 -->
+            <div class="speed-gauge-wrap">
+                <canvas id="gaugeCanvas" width="400" height="400"></canvas>
+                <div class="label" id="gaugeUnitLabel">实时语速（字/分钟）</div>
+                <div class="value" id="gaugeValue">0 <span id="gaugeUnit">字/分钟</span></div>
+                <div class="status" id="gaugeStatus">等待说话...</div>
+            </div>
+            <!-- 右侧：统计信息 -->
+            <div class="speed-info">
+                <div class="item"><span>语言</span><span id="detectLang" class="lang-tag">—</span></div>
+                <div class="item"><span>字数</span><span class="num" id="totalWords">0</span></div>
+                <div class="item"><span>时长</span><span class="num" id="totalDuration">0.0</span><span style="color:#64748b;">秒</span></div>
+                <div class="item"><span>语速</span><span class="num" id="avgSpeed">0</span><span id="avgUnit" style="color:#64748b;">/分钟</span></div>
             </div>
         </div>
     </div>
@@ -228,7 +299,7 @@
     <div class="status" id="status">💡 开始使用</div>
 </div>
 
-<!-- ===== 登录弹窗 - 只输入 API Key ===== -->
+<!-- ===== 登录弹窗 ===== -->
 <div id="loginOverlay" class="login-overlay">
     <div class="login-box">
         <button class="close-btn" onclick="closeLogin()">✕</button>
@@ -273,18 +344,15 @@ let isLoggedIn = false;
 let chatHistory = [];
 
 // ============================================================
-// 导航切换 - 直接跳转
+// 导航切换
 // ============================================================
 function goTo(target) {
-    if (target === 'general') {
-        window.location.href = 'index.html';
-        return;
-    }
+    if (target === 'general') { window.location.href = 'index.html'; return; }
     window.location.href = target + '.html';
 }
 
 // ============================================================
-// 登录相关 - 只输入 API Key
+// 登录
 // ============================================================
 function showLogin() {
     const overlay = document.getElementById('loginOverlay');
@@ -293,12 +361,10 @@ function showLogin() {
     document.getElementById('loginError').classList.add('hidden');
     document.getElementById('loginApiKey').focus();
 }
-
 function closeLogin() {
     document.getElementById('loginOverlay').style.display = 'none';
     document.getElementById('loginError').classList.add('hidden');
 }
-
 function confirmLogin() {
     const apiKey = document.getElementById('loginApiKey').value.trim();
     if (!apiKey) {
@@ -313,17 +379,11 @@ function confirmLogin() {
     updateUI();
     setStatus('✅ 已登录，可以开始分析了', 'success');
 }
-
 function checkLoginStatus() {
     const apiKey = localStorage.getItem('deepseek_api_key');
-    if (apiKey) {
-        isLoggedIn = true;
-        updateUI();
-    } else {
-        setTimeout(() => showLogin(), 300);
-    }
+    if (apiKey) { isLoggedIn = true; updateUI(); }
+    else { setTimeout(() => showLogin(), 300); }
 }
-
 function updateUI() {
     const userInfo = document.getElementById('userInfo');
     const logoutBtn = document.getElementById('logoutBtn');
@@ -331,10 +391,8 @@ function updateUI() {
     const roleDisplay = document.getElementById('roleDisplay');
     const studentBtn = document.getElementById('navStudent');
     const teacherBtn = document.getElementById('navTeacher');
-
     if (studentBtn) { studentBtn.disabled = false; studentBtn.style.opacity = '1'; studentBtn.style.cursor = 'pointer'; }
     if (teacherBtn) { teacherBtn.disabled = false; teacherBtn.style.opacity = '1'; teacherBtn.style.cursor = 'pointer'; }
-
     if (isLoggedIn) {
         userInfo.innerHTML = '<span class="role-badge" style="background:#22c55e;color:#0f172a;">👤 访客</span>';
         logoutBtn.classList.remove('hidden');
@@ -347,7 +405,6 @@ function updateUI() {
         if (roleDisplay) roleDisplay.textContent = '通用分析 · 多场景';
     }
 }
-
 function logout() {
     if (!confirm('确认退出登录？')) return;
     localStorage.removeItem('deepseek_api_key');
@@ -356,21 +413,12 @@ function logout() {
     updateUI();
     window.location.href = 'index.html';
 }
-
-function showChangePwd() {
-    alert('访客模式下无需修改密码。');
-}
-
-function closeChangePwd() {
-    document.getElementById('changePwdOverlay').style.display = 'none';
-}
-
-function confirmChangePwd() {
-    alert('访客模式下无需修改密码。');
-}
+function showChangePwd() { alert('访客模式下无需修改密码。'); }
+function closeChangePwd() { document.getElementById('changePwdOverlay').style.display = 'none'; }
+function confirmChangePwd() { alert('访客模式下无需修改密码。'); }
 
 // ============================================================
-// 语音识别 + 语速统计 + 仪表盘（国标分级）
+// 语音识别 + 实时语速表（中英文分开统计 + 滑动窗口）
 // ============================================================
 let recognition = null;
 let isListening = false;
@@ -378,143 +426,29 @@ let voiceFinalText = '';
 let voiceRestartTimer = null;
 let voiceManualStop = false;
 let speechStartTime = null;
-let speechEndTime = null;
 
-// ----- 国标语速分级 -----
-// 偏慢: 0-80, 正常: 80-160, 偏快: 160-220, 很快: 220+
-// 仪表盘色区对应: 蓝(0-80) 绿(80-160) 黄(160-220) 红(220-300)
-const SPEED_ZONES = [
-    { label: '偏慢', max: 80, color: '#60a5fa', endAngle: 0.15 },
-    { label: '正常', max: 160, color: '#34d399', endAngle: 0.45 },
-    { label: '偏快', max: 220, color: '#fbbf24', endAngle: 0.75 },
-    { label: '很快', max: 300, color: '#f87171', endAngle: 1.0 }
-];
+// 滑动窗口：存储最近识别的词或字
+let windowTokens = [];
+let windowTimestamps = [];
+const WINDOW_SIZE = 3000; // 3秒窗口
 
-function getSpeedStatus(speed) {
-    if (speed < 80) return { text: '🐢 偏慢，建议适当加快', cls: 'slow' };
-    if (speed < 160) return { text: '✅ 正常，表达流畅', cls: 'moderate' };
-    if (speed < 220) return { text: '⚡ 偏快，注意清晰度', cls: 'fast' };
-    return { text: '🔥 很快，适合快速表达', cls: 'very-fast' };
-}
+// 累计统计
+let totalWords = 0;
+let totalDuration = 0;
+let currentLang = 'zh'; // 'zh' | 'en' | 'mix'
 
-function drawGauge(speed) {
-    const canvas = document.getElementById('gaugeCanvas');
-    const ctx = canvas.getContext('2d');
-    const w = canvas.width;
-    const h = canvas.height;
-    const cx = w / 2;
-    const cy = h / 2;
-    const radius = 150;
-
-    ctx.clearRect(0, 0, w, h);
-
-    const startAngle = 0.75 * Math.PI;
-    const endAngle = 2.25 * Math.PI;
-    const totalAngle = endAngle - startAngle;
-
-    let currentEnd = 0;
-    SPEED_ZONES.forEach(zone => {
-        const frac = zone.endAngle;
-        const a1 = startAngle + currentEnd * totalAngle;
-        const a2 = startAngle + frac * totalAngle;
-        ctx.beginPath();
-        ctx.arc(cx, cy, radius, a1, a2);
-        ctx.strokeStyle = zone.color;
-        ctx.lineWidth = 28;
-        ctx.lineCap = 'butt';
-        ctx.stroke();
-        currentEnd = frac;
-    });
-
-    // 刻度线
-    for (let i = 0; i <= 20; i++) {
-        const frac = i / 20;
-        const angle = startAngle + frac * totalAngle;
-        const inner = radius - 18;
-        const outer = radius - 6;
-        ctx.beginPath();
-        ctx.moveTo(cx + inner * Math.cos(angle), cy + inner * Math.sin(angle));
-        ctx.lineTo(cx + outer * Math.cos(angle), cy + outer * Math.sin(angle));
-        ctx.strokeStyle = i % 5 === 0 ? '#94a3b8' : '#475569';
-        ctx.lineWidth = i % 5 === 0 ? 2.5 : 1.5;
-        ctx.stroke();
-    }
-
-    // 刻度标签（0, 80, 160, 220, 300）
-    const labels = [
-        { val: 0, frac: 0 },
-        { val: 80, frac: 0.15 },
-        { val: 160, frac: 0.45 },
-        { val: 220, frac: 0.75 },
-        { val: 300, frac: 1.0 }
-    ];
-    ctx.fillStyle = '#64748b';
-    ctx.font = '12px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    labels.forEach(l => {
-        const angle = startAngle + l.frac * totalAngle;
-        const r = radius + 22;
-        const x = cx + r * Math.cos(angle);
-        const y = cy + r * Math.sin(angle);
-        ctx.fillText(l.val, x, y);
-    });
-
-    // 中心装饰圈
-    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28);
-    grad.addColorStop(0, '#1e293b');
-    grad.addColorStop(1, '#0f172a');
-    ctx.beginPath();
-    ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
-    ctx.fillStyle = grad;
-    ctx.fill();
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 指针
-    const clampedSpeed = Math.min(Math.max(speed, 0), 300);
-    const frac = clampedSpeed / 300;
-    const angle = startAngle + frac * totalAngle;
-    const len = radius - 12;
-    const tipX = cx + len * Math.cos(angle);
-    const tipY = cy + len * Math.sin(angle);
-    const baseLen = 18;
-
-    ctx.shadowColor = 'rgba(255,255,255,0.1)';
-    ctx.shadowBlur = 8;
-    ctx.beginPath();
-    ctx.moveTo(cx + baseLen * Math.cos(angle - 0.1), cy + baseLen * Math.sin(angle - 0.1));
-    ctx.lineTo(tipX, tipY);
-    ctx.lineTo(cx + baseLen * Math.cos(angle + 0.1), cy + baseLen * Math.sin(angle + 0.1));
-    ctx.closePath();
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
-    ctx.fillStyle = '#3b82f6';
-    ctx.fill();
-    ctx.strokeStyle = '#1e293b';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-}
-
-function updateGauge(speed) {
-    const container = document.getElementById('speedGauge');
-    const valueEl = document.getElementById('gaugeValue');
-    const statusEl = document.getElementById('gaugeStatus');
-
-    container.classList.add('active');
-    drawGauge(speed);
-
-    valueEl.innerHTML = `${speed} <span>字/分钟</span>`;
-
-    const status = getSpeedStatus(speed);
-    statusEl.textContent = status.text;
-    statusEl.className = 'gauge-status ' + status.cls;
-}
+// DOM 引用
+const gaugeCanvas = document.getElementById('gaugeCanvas');
+const gaugeValue = document.getElementById('gaugeValue');
+const gaugeUnit = document.getElementById('gaugeUnit');
+const gaugeUnitLabel = document.getElementById('gaugeUnitLabel');
+const gaugeStatus = document.getElementById('gaugeStatus');
+const detectLang = document.getElementById('detectLang');
+const totalWordsEl = document.getElementById('totalWords');
+const totalDurationEl = document.getElementById('totalDuration');
+const avgSpeedEl = document.getElementById('avgSpeed');
+const avgUnit = document.getElementById('avgUnit');
+const speedDashboard = document.getElementById('speedDashboard');
 
 function toggleVoiceInput() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -536,9 +470,16 @@ function startVoiceInput() {
     voiceManualStop = false;
     let hasResult = false;
     speechStartTime = Date.now();
+    windowTokens = [];
+    windowTimestamps = [];
+    totalWords = 0;
+    totalDuration = 0;
+    currentLang = 'zh';
     if (voiceRestartTimer) { clearTimeout(voiceRestartTimer); voiceRestartTimer = null; }
     
-    document.getElementById('speedGauge').classList.remove('active');
+    // 显示仪表盘
+    speedDashboard.classList.add('active');
+    updateGauge(0, 'zh');
 
     recognition.onstart = function() {
         isListening = true;
@@ -560,7 +501,70 @@ function startVoiceInput() {
             if (event.results[i].isFinal) currentFinal += transcript;
             else currentInterim += transcript;
         }
-        if (currentFinal) { voiceFinalText += currentFinal; hasResult = true; }
+        if (currentFinal) { 
+            voiceFinalText += currentFinal; 
+            hasResult = true;
+            // 更新滑动窗口
+            const now = Date.now();
+            // 检测语言
+            const engRatio = (currentFinal.match(/[a-zA-Z]/g) || []).length / Math.max(currentFinal.length, 1);
+            if (engRatio > 0.3) {
+                currentLang = 'en';
+            } else if (engRatio > 0.05) {
+                currentLang = 'mix';
+            } else {
+                currentLang = 'zh';
+            }
+            // 提取字数（中文按字数，英文按单词数）
+            let wordCount = 0;
+            if (currentLang === 'zh') {
+                wordCount = currentFinal.replace(/[\s\da-zA-Z]/g, '').length;
+            } else {
+                wordCount = currentFinal.match(/[a-zA-Z]+/g)?.length || 0;
+            }
+            if (wordCount > 0) {
+                windowTokens.push({ text: currentFinal, count: wordCount, time: now });
+                totalWords += wordCount;
+                // 清理超出窗口的数据
+                const cutoff = now - WINDOW_SIZE;
+                while (windowTokens.length > 0 && windowTokens[0].time < cutoff) {
+                    windowTokens.shift();
+                }
+                // 计算当前窗口内的字数
+                let windowTotal = 0;
+                windowTokens.forEach(t => windowTotal += t.count);
+                // 计算当前窗口时长
+                let windowDuration = 0;
+                if (windowTokens.length > 1) {
+                    windowDuration = (windowTokens[windowTokens.length-1].time - windowTokens[0].time) / 1000;
+                } else {
+                    windowDuration = (now - speechStartTime) / 1000;
+                }
+                // 计算实时语速
+                let speed = 0;
+                if (windowDuration > 0) {
+                    speed = Math.round(windowTotal / (windowDuration / 60));
+                }
+                // 更新仪表盘
+                updateGauge(speed, currentLang);
+                // 更新统计信息
+                totalDuration = (now - speechStartTime) / 1000;
+                document.getElementById('totalDuration').textContent = totalDuration.toFixed(1);
+                document.getElementById('totalWords').textContent = totalWords;
+                let avgSpeed = 0;
+                if (totalDuration > 0) {
+                    avgSpeed = Math.round(totalWords / (totalDuration / 60));
+                }
+                document.getElementById('avgSpeed').textContent = avgSpeed;
+                const unitText = currentLang === 'zh' ? '字/分钟' : '词/分钟';
+                document.getElementById('avgUnit').textContent = unitText;
+                const langMap = { 'zh': '中文', 'en': '英文', 'mix': '中英混合' };
+                const langClassMap = { 'zh': 'zh', 'en': 'en', 'mix': 'mix' };
+                const langEl = document.getElementById('detectLang');
+                langEl.textContent = langMap[currentLang] || '—';
+                langEl.className = 'lang-tag ' + (langClassMap[currentLang] || '');
+            }
+        }
         const displayText = voiceFinalText + (currentInterim ? ' ' + currentInterim : '');
         if (displayText.trim()) {
             document.getElementById('textInput').value = displayText;
@@ -616,31 +620,37 @@ function finishVoiceRecognition(text) {
     if (!text || !text.trim()) { stopVoiceInput(); return; }
     const englishRatio = (text.match(/[a-zA-Z]/g) || []).length / (text.length || 1);
     const detectedLang = englishRatio > 0.3 ? '英文' : '中文';
-    speechEndTime = Date.now();
-    const durationSeconds = (speechEndTime - speechStartTime) / 1000;
-    
-    const cleanText = text.replace(/\s/g, '');
-    const wordCount = cleanText.length;
-    
-    let speed = 0;
-    if (durationSeconds > 0) {
-        speed = Math.round(wordCount / (durationSeconds / 60));
+    const endTime = Date.now();
+    totalDuration = (endTime - speechStartTime) / 1000;
+    // 根据语言统计字数
+    let langKey = 'zh';
+    if (englishRatio > 0.3) langKey = 'en';
+    else if (englishRatio > 0.05) langKey = 'mix';
+    if (langKey === 'zh') {
+        totalWords = text.replace(/[\s\da-zA-Z]/g, '').length;
+    } else {
+        totalWords = text.match(/[a-zA-Z]+/g)?.length || 0;
     }
-    
-    // 更新统计数字
-    document.getElementById('speechWordCount').textContent = wordCount;
-    document.getElementById('speechDuration').textContent = durationSeconds.toFixed(1);
-    document.getElementById('speechSpeed').textContent = speed;
-    document.getElementById('speechStats').classList.remove('hidden');
-    
-    // 更新仪表盘
-    updateGauge(speed);
-    
+    let speed = 0;
+    if (totalDuration > 0) {
+        speed = Math.round(totalWords / (totalDuration / 60));
+    }
+    updateGauge(speed, langKey);
+    document.getElementById('totalDuration').textContent = totalDuration.toFixed(1);
+    document.getElementById('totalWords').textContent = totalWords;
+    document.getElementById('avgSpeed').textContent = speed;
+    const unitText = langKey === 'zh' ? '字/分钟' : '词/分钟';
+    document.getElementById('avgUnit').textContent = unitText;
+    const langMap = { 'zh': '中文', 'en': '英文', 'mix': '中英混合' };
+    const langClassMap = { 'zh': 'zh', 'en': 'en', 'mix': 'mix' };
+    const langEl = document.getElementById('detectLang');
+    langEl.textContent = langMap[langKey] || '中文';
+    langEl.className = 'lang-tag ' + (langClassMap[langKey] || 'zh');
     document.getElementById('textInput').value = text.trim();
     document.getElementById('micStatus').textContent = '✅ 已识别 (' + detectedLang + ')';
     document.getElementById('micStatus').className = 'mic-status active';
     document.getElementById('realTimeIndicator').classList.add('hidden');
-    setStatus('✅ 语音识别完成（' + detectedLang + '），字数 ' + wordCount + '，用时 ' + durationSeconds.toFixed(1) + ' 秒，语速 ' + speed + ' 字/分钟', 'success');
+    setStatus('✅ 语音识别完成（' + detectedLang + '），字数 ' + totalWords + '，用时 ' + totalDuration.toFixed(1) + ' 秒，语速 ' + speed + ' ' + unitText, 'success');
     isListening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micBtn').textContent = '🎙️';
@@ -658,28 +668,183 @@ function stopVoiceInput() {
     document.getElementById('realTimeIndicator').classList.add('hidden');
     if (document.getElementById('textInput').value.trim()) {
         const text = document.getElementById('textInput').value.trim();
-        speechEndTime = Date.now();
-        const durationSeconds = (speechEndTime - speechStartTime) / 1000;
-        const cleanText = text.replace(/\s/g, '');
-        const wordCount = cleanText.length;
-        let speed = 0;
-        if (durationSeconds > 0) {
-            speed = Math.round(wordCount / (durationSeconds / 60));
+        const endTime = Date.now();
+        totalDuration = (endTime - speechStartTime) / 1000;
+        const englishRatio = (text.match(/[a-zA-Z]/g) || []).length / (text.length || 1);
+        let langKey = 'zh';
+        if (englishRatio > 0.3) langKey = 'en';
+        else if (englishRatio > 0.05) langKey = 'mix';
+        if (langKey === 'zh') {
+            totalWords = text.replace(/[\s\da-zA-Z]/g, '').length;
+        } else {
+            totalWords = text.match(/[a-zA-Z]+/g)?.length || 0;
         }
-        document.getElementById('speechWordCount').textContent = wordCount;
-        document.getElementById('speechDuration').textContent = durationSeconds.toFixed(1);
-        document.getElementById('speechSpeed').textContent = speed;
-        document.getElementById('speechStats').classList.remove('hidden');
-        updateGauge(speed);
+        let speed = 0;
+        if (totalDuration > 0) {
+            speed = Math.round(totalWords / (totalDuration / 60));
+        }
+        updateGauge(speed, langKey);
+        document.getElementById('totalDuration').textContent = totalDuration.toFixed(1);
+        document.getElementById('totalWords').textContent = totalWords;
+        document.getElementById('avgSpeed').textContent = speed;
+        const unitText = langKey === 'zh' ? '字/分钟' : '词/分钟';
+        document.getElementById('avgUnit').textContent = unitText;
+        const langMap = { 'zh': '中文', 'en': '英文', 'mix': '中英混合' };
+        const langClassMap = { 'zh': 'zh', 'en': 'en', 'mix': 'mix' };
+        const langEl = document.getElementById('detectLang');
+        langEl.textContent = langMap[langKey] || '中文';
+        langEl.className = 'lang-tag ' + (langClassMap[langKey] || 'zh');
         document.getElementById('micStatus').textContent = '✅ 已识别';
         document.getElementById('micStatus').className = 'mic-status active';
-        setStatus('✅ 语音识别完成，字数 ' + wordCount + '，用时 ' + durationSeconds.toFixed(1) + ' 秒，语速 ' + speed + ' 字/分钟', 'success');
+        setStatus('✅ 语音识别完成，字数 ' + totalWords + '，用时 ' + totalDuration.toFixed(1) + ' 秒，语速 ' + speed + ' ' + unitText, 'success');
         setTimeout(() => { analyzeTextInput(); }, 200);
     } else {
         document.getElementById('micStatus').textContent = '点击🎙️说话';
         document.getElementById('micStatus').className = 'mic-status';
         document.getElementById('textInput').placeholder = '粘贴文本，或点击🎙️说话';
     }
+}
+
+// ============================================================
+// 仪表盘绘制
+// ============================================================
+function drawGauge(speed) {
+    const ctx = gaugeCanvas.getContext('2d');
+    const w = gaugeCanvas.width;
+    const h = gaugeCanvas.height;
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = 150;
+    ctx.clearRect(0, 0, w, h);
+
+    const startAngle = 0.75 * Math.PI;
+    const endAngle = 2.25 * Math.PI;
+    const totalAngle = endAngle - startAngle;
+
+    const zones = [
+        { label: '偏慢', max: 80, color: '#60a5fa', endAngle: 0.15 },
+        { label: '适中', max: 150, color: '#34d399', endAngle: 0.45 },
+        { label: '偏快', max: 200, color: '#fbbf24', endAngle: 0.75 },
+        { label: '很快', max: 300, color: '#f87171', endAngle: 1.0 }
+    ];
+
+    let currentEnd = 0;
+    zones.forEach(zone => {
+        const frac = zone.endAngle;
+        const a1 = startAngle + currentEnd * totalAngle;
+        const a2 = startAngle + frac * totalAngle;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, a1, a2);
+        ctx.strokeStyle = zone.color;
+        ctx.lineWidth = 28;
+        ctx.lineCap = 'butt';
+        ctx.stroke();
+        currentEnd = frac;
+    });
+
+    for (let i = 0; i <= 20; i++) {
+        const frac = i / 20;
+        const angle = startAngle + frac * totalAngle;
+        const inner = radius - 18;
+        const outer = radius - 6;
+        ctx.beginPath();
+        ctx.moveTo(cx + inner * Math.cos(angle), cy + inner * Math.sin(angle));
+        ctx.lineTo(cx + outer * Math.cos(angle), cy + outer * Math.sin(angle));
+        ctx.strokeStyle = i % 5 === 0 ? '#94a3b8' : '#475569';
+        ctx.lineWidth = i % 5 === 0 ? 2.5 : 1.5;
+        ctx.stroke();
+    }
+
+    const labels = [
+        { val: 0, frac: 0 },
+        { val: 80, frac: 0.15 },
+        { val: 150, frac: 0.45 },
+        { val: 200, frac: 0.75 },
+        { val: 300, frac: 1.0 }
+    ];
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    labels.forEach(l => {
+        const angle = startAngle + l.frac * totalAngle;
+        const r = radius + 22;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        ctx.fillText(l.val, x, y);
+    });
+
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 28);
+    grad.addColorStop(0, '#1e293b');
+    grad.addColorStop(1, '#0f172a');
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const clampedSpeed = Math.min(Math.max(speed, 0), 300);
+    const frac = clampedSpeed / 300;
+    const angle = startAngle + frac * totalAngle;
+    const len = radius - 12;
+    const tipX = cx + len * Math.cos(angle);
+    const tipY = cy + len * Math.sin(angle);
+    const baseLen = 18;
+
+    ctx.shadowColor = 'rgba(255,255,255,0.1)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.moveTo(cx + baseLen * Math.cos(angle - 0.1), cy + baseLen * Math.sin(angle - 0.1));
+    ctx.lineTo(tipX, tipY);
+    ctx.lineTo(cx + baseLen * Math.cos(angle + 0.1), cy + baseLen * Math.sin(angle + 0.1));
+    ctx.closePath();
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
+    ctx.fillStyle = '#3b82f6';
+    ctx.fill();
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
+function updateGauge(speed, lang) {
+    speedDashboard.classList.add('active');
+    drawGauge(speed);
+    const unitText = lang === 'zh' ? '字/分钟' : '词/分钟';
+    gaugeUnit.textContent = unitText;
+    gaugeUnitLabel.textContent = '实时语速（' + unitText + '）';
+    gaugeValue.innerHTML = speed + ' <span id="gaugeUnit">' + unitText + '</span>';
+
+    let statusText, statusClass;
+    if (lang === 'en') {
+        if (speed < 80) { statusText = '🐢 偏慢，可适当加快'; statusClass = 'slow'; }
+        else if (speed < 150) { statusText = '✅ 适中，表达流畅'; statusClass = 'moderate'; }
+        else if (speed < 200) { statusText = '⚡ 偏快，注意清晰度'; statusClass = 'fast'; }
+        else { statusText = '🔥 很快，适合快速表达'; statusClass = 'very-fast'; }
+    } else {
+        if (speed < 60) { statusText = '🐢 偏慢，可适当加快'; statusClass = 'slow'; }
+        else if (speed < 120) { statusText = '✅ 适中，表达流畅'; statusClass = 'moderate'; }
+        else if (speed < 180) { statusText = '⚡ 偏快，注意清晰度'; statusClass = 'fast'; }
+        else { statusText = '🔥 很快，适合快速表达'; statusClass = 'very-fast'; }
+    }
+    gaugeStatus.textContent = statusText;
+    gaugeStatus.className = 'status ' + statusClass;
+}
+
+function clearTextInput() {
+    textInput.value = '';
+    if (!uploadedText || fileName === '语音输入') {
+        uploadedText = '';
+        resultArea.classList.add('hidden');
+        speedDashboard.classList.remove('active');
+    }
+    setStatus('💡 已清空', '');
 }
 
 // ============================================================
@@ -763,26 +928,21 @@ async function callAI(messages, actionName) {
         setStatus('⚠️ 请先加载文本', 'error'); 
         return null; 
     }
-
     const apiKey = localStorage.getItem('deepseek_api_key');
     if (!apiKey) {
         setStatus('⚠️ 请先输入 DeepSeek API Key', 'error');
         showLogin();
         return null;
     }
-
     setStatus('⏳ ' + actionName + '...', 'loading');
-    
     const requestBody = {
         text: uploadedText || '',
         api_key: apiKey
     };
-    
     if (messages && messages.length > 0) {
         requestBody.messages = messages;
         requestBody.is_chat = true;
     }
-
     try {
         const res = await fetch(API_BASE + '/analyze', {
             method: 'POST',
@@ -870,17 +1030,6 @@ function analyzeTextInput() {
     fullAnalysis();
 }
 
-function clearTextInput() {
-    textInput.value = '';
-    if (!uploadedText || fileName === '语音输入') {
-        uploadedText = '';
-        resultArea.classList.add('hidden');
-        document.getElementById('speechStats').classList.add('hidden');
-        document.getElementById('speedGauge').classList.remove('active');
-    }
-    setStatus('💡 已清空', '');
-}
-
 function clearAnalysis() { resultArea.classList.add('hidden'); setStatus('💡 已清空结果', ''); }
 
 // ============================================================
@@ -951,7 +1100,6 @@ function addChatMessage(role, content) {
     chatHistory.push({ role, content });
     renderChatHistory();
 }
-
 function renderChatHistory() {
     const container = document.getElementById('qaHistory');
     if (chatHistory.length === 0) {
@@ -969,28 +1117,23 @@ function renderChatHistory() {
     container.innerHTML = html;
     container.scrollTop = container.scrollHeight;
 }
-
 function clearChat() {
     chatHistory = [];
     renderChatHistory();
     setStatus('💡 对话已清空', '');
 }
-
 async function askQuestion() {
     const question = document.getElementById('questionInput').value.trim();
     if (!question) { setStatus('⚠️ 请输入问题', 'error'); return; }
     if (!uploadedText) { setStatus('⚠️ 请先加载文本（上传或粘贴文本后点击分析）', 'error'); return; }
-
     const apiKey = localStorage.getItem('deepseek_api_key');
     if (!apiKey) {
         setStatus('⚠️ 请先输入 DeepSeek API Key', 'error');
         showLogin();
         return;
     }
-
     addChatMessage('user', question);
     document.getElementById('questionInput').value = '';
-
     const messages = [
         {
             role: 'system',
@@ -1001,7 +1144,6 @@ async function askQuestion() {
             content: `文件内容：\n${uploadedText.slice(0, 8000)}${uploadedText.length > 8000 ? '\n... (截断)' : ''}\n\n用户问题：${question}`
         }
     ];
-
     const result = await callAI(messages, '回答');
     if (result) {
         let answer = result;
@@ -1011,7 +1153,6 @@ async function askQuestion() {
         addChatMessage('assistant', answer);
     }
 }
-
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' && document.activeElement === document.getElementById('questionInput')) {
         if (e.shiftKey) return;
