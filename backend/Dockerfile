@@ -7,7 +7,7 @@ RUN pip install --upgrade pip setuptools wheel && pip install -r requirements.tx
 
 COPY . .
 
-ENV PORT=8000
-EXPOSE 8000
+ENV PORT=5000
+EXPOSE 5000
 
-CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+CMD gunicorn app:app --bind 0.0.0.0:5000 --workers 2 --timeout 120
