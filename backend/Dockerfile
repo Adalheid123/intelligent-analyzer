@@ -1,1 +1,13 @@
+FROM python:3.11-slim
 
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+
+COPY . .
+
+ENV PORT=8000
+EXPOSE 8000
+
+CMD gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
