@@ -1,183 +1,29 @@
+"""
+仓库根目录引导文件
+把 SnapDeploy 的启动重定向到 backend/app.py
+"""
+import sys
 import os
-import re
-import json
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import openai
-import openpyxl
-import docx
-import io
+import importlib.util
 
-app = Flask(__name__)
-CORS(app)
+# backend 目录的绝对路径
+BACKEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
 
-@app.route('/')
-def index():
-    return jsonify({"message": "智能体分析器 API 已启动", "status": "running"})
+# 加入 Python 路径 + 切换工作目录
+sys.path.insert(0, BACKEND_DIR)
+os.chdir(BACKEND_DIR)
 
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    try:
-        data = request.json
-        text = data.get('text', '')
-        api_key = data.get('api_key', '')
-        is_chat = data.get('is_chat', False)
-        messages = data.get('messages', [])
-        
-        if not api_key:
-            return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
+# 明确加载 backend/app.py，避免模块名冲突
+spec = importlib.util.spec_from_file_location(
+    "backend_app",
+    os.path.join(BACKEND_DIR, "app.py")
+)
+backend_app = importlib.util.module_from_spec(spec)
+sys.modules["backend_app"] = backend_app
+spec.loader.exec_module(backend_app)
 
-        client = openai.OpenAI(
-            api_key=api_key,
-            base_url="https://api.deepseek.com/v1"
-        )
-
-        # ===== 自由问答模式 =====
-        if is_chat and messages:
-            response = client.chat.completions.create(
-                model="deepseek-chat",
-                messages=messages,
-                temperature=0.7
-            )
-            result_text = response.choices[0].message.content
-            return jsonify({"success": True, "result": result_text})
-
-        # ===== 标准化分析模式（七个字段） =====
-        if not text:
-            return jsonify({"success": False, "error": "请提供文本内容"}), 400
-
-        prompt = f"""请对以下文本进行深度分析，输出JSON格式结果，包含以下7个字段：
-
-1. 情感分析：情感倾向（正向/中性/负向）、情感强度（1-5级）、关键情感词列表
-2. 用户意图：意图类型、意图描述
-3. 需求紧迫程度：等级（紧急/较急/一般）、评分（1-10）
-4. 问题分类：类别、子类
-5. 推荐处理路径：动作、理由
-6. 置信度：评分（0-1）、说明
-7. 判断依据：关键信号列表、分析说明
-
-文本内容：{text}
-
-请只返回JSON，不要有其他内容。"""
-
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-
-        result_text = response.choices[0].message.content
-        json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
-        if json_match:
-            result = json.loads(json_match.group())
-            return jsonify({"success": True, "result": result})
-        else:
-            return jsonify({"success": False, "error": "JSON解析失败"}), 500
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route('/analyze/teaching', methods=['POST'])
-def analyze_teaching():
-    try:
-        data = request.json
-        text = data.get('text', '')
-        api_key = data.get('api_key', '')
-        
-        if not text:
-            return jsonify({"success": False, "error": "请提供作文内容"}), 400
-        if not api_key:
-            return jsonify({"success": False, "error": "请提供 DeepSeek API Key"}), 400
-
-        client = openai.OpenAI(
-            api_key=api_key,
-            base_url="https://api.deepseek.com/v1"
-        )
-
-        prompt = f"""请对以下英语作文进行批改，输出JSON格式，包含：
-
-1. 语法准确性：评分（0-10）、反馈
-2. 词汇丰富度：评分（0-10）、反馈
-3. 逻辑连贯性：评分（0-10）、反馈
-4. 语用得体性：评分（0-10）、反馈
-5. 整体评语
-6. 修改优先级：列出3条最重要的修改建议
-
-作文内容：{text}
-
-请只返回JSON。"""
-
-        response = client.chat.completions.create(
-            model="deepseek-chat",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
-        )
-
-        result_text = response.choices[0].message.content
-        json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
-        if json_match:
-            result = json.loads(json_match.group())
-            return jsonify({"success": True, "result": result})
-        else:
-            return jsonify({"success": False, "error": "JSON解析失败"}), 500
-
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route('/import_students', methods=['POST'])
-def import_students():
-    try:
-        if 'file' not in request.files:
-            return jsonify({"success": False, "error": "没有上传文件"}), 400
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({"success": False, "error": "文件名为空"}), 400
-        school = request.form.get('school', '')
-        major = request.form.get('major', '')
-        className = request.form.get('class', '')
-        if not school or not major or not className:
-            return jsonify({"success": False, "error": "缺少学校、专业或班级参数"}), 400
-        students = []
-        filename = file.filename.lower()
-        if filename.endswith('.xlsx') or filename.endswith('.xls'):
-            wb = openpyxl.load_workbook(io.BytesIO(file.read()))
-            sheet = wb.active
-            for row in sheet.iter_rows(min_row=2, values_only=True):
-                if row and len(row) >= 2:
-                    name = str(row[0]).strip() if row[0] else ''
-                    student_id = str(row[1]).strip() if row[1] else ''
-                    if name and name != 'None':
-                        students.append({"name": name, "student_id": student_id})
-        elif filename.endswith('.docx'):
-            doc = docx.Document(io.BytesIO(file.read()))
-            text = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-            lines = text.strip().split('\n')
-            for line in lines:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = re.split(r'[\t,，\s]+', line)
-                if len(parts) >= 2:
-                    name = parts[0].strip()
-                    student_id = parts[1].strip()
-                    if name and student_id:
-                        students.append({"name": name, "student_id": student_id})
-                elif len(parts) == 1:
-                    if parts[0].strip():
-                        students.append({"name": parts[0].strip(), "student_id": ""})
-        else:
-            return jsonify({"success": False, "error": "不支持的文件格式，请上传 .xlsx .xls .docx"}), 400
-        if not students:
-            return jsonify({"success": False, "error": "未能解析到学生数据，请检查文件格式"}), 400
-        return jsonify({
-            "success": True,
-            "message": f"成功解析 {len(students)} 名学生",
-            "total": len(students),
-            "students": students
-        })
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+# 导出 app 给 gunicorn / flask 用
+app = backend_app.app
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
